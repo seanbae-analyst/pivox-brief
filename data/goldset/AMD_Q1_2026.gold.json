@@ -1,0 +1,22 @@
+{
+  "_verified": false,
+  "_instructions": "Correct each field against the transcript, then set _verified to true.",
+  "ticker": "AMD",
+  "period": "Q1 2026",
+  "guidance_direction": "raised",
+  "management_tone": "confident",
+  "key_themes": [
+    "demand_strength",
+    "market_share_gain",
+    "new_product_ramp",
+    "supply_constraint",
+    "segment_expansion"
+  ],
+  "metrics": {
+    "total_revenue": 10300000000.0,
+    "data_center_revenue": 5800000000.0,
+    "client_and_gaming_revenue": 3600000000.0,
+    "embedded_revenue": 873000000.0,
+    "free_cash_flow": 2600000000.0
+  }
+}

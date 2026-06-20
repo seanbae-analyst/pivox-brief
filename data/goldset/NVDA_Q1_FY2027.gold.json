@@ -1,0 +1,22 @@
+{
+  "_verified": false,
+  "_instructions": "Correct each field against the transcript, then set _verified to true.",
+  "ticker": "NVDA",
+  "period": "Q1 FY2027",
+  "guidance_direction": "raised",
+  "management_tone": "confident",
+  "key_themes": [
+    "demand_strength",
+    "new_product_ramp",
+    "market_share_gain",
+    "capital_return",
+    "supply_constraint"
+  ],
+  "metrics": {
+    "total_revenue": 82000000000.0,
+    "data_center_revenue": 75000000000.0,
+    "data_center_compute_revenue": 60000000000.0,
+    "data_center_networking_revenue": 15000000000.0,
+    "free_cash_flow": 49000000000.0
+  }
+}

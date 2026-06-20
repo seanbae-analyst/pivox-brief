@@ -1,0 +1,22 @@
+{
+  "_verified": false,
+  "_instructions": "Correct each field against the transcript, then set _verified to true.",
+  "ticker": "GOOGL",
+  "period": "Q1 2026",
+  "guidance_direction": "raised",
+  "management_tone": "confident",
+  "key_themes": [
+    "demand_strength",
+    "capex_investment",
+    "new_product_ramp",
+    "supply_constraint",
+    "segment_expansion"
+  ],
+  "metrics": {
+    "total_revenue": 109900000000.0,
+    "search_advertising_revenue": 60400000000.0,
+    "youtube_advertising_revenue": 9900000000.0,
+    "google_cloud_revenue": 20000000000.0,
+    "operating_income": 39700000000.0
+  }
+}

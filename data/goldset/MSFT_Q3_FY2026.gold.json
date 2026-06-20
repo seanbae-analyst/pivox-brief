@@ -1,0 +1,22 @@
+{
+  "_verified": false,
+  "_instructions": "Correct each field against the transcript, then set _verified to true.",
+  "ticker": "MSFT",
+  "period": "Q3 FY2026",
+  "guidance_direction": "raised",
+  "management_tone": "confident",
+  "key_themes": [
+    "demand_strength",
+    "capex_investment",
+    "new_product_ramp",
+    "margin_pressure",
+    "pricing_power"
+  ],
+  "metrics": {
+    "total_revenue": 82900000000.0,
+    "microsoft_cloud_revenue": 54500000000.0,
+    "intelligent_cloud_revenue": 34700000000.0,
+    "productivity_business_processes_revenue": 35000000000.0,
+    "free_cash_flow": 15800000000.0
+  }
+}
