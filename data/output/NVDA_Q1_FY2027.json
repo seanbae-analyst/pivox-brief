@@ -1,0 +1,59 @@
+{
+  "ticker": "NVDA",
+  "period": "Q1 FY2027",
+  "call_date": "2026-05-20",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 82000000000.0,
+      "yoy_pct": 85.0,
+      "qoq_pct": 20.0
+    },
+    {
+      "name": "data_center_revenue",
+      "value_usd": 75000000000.0,
+      "yoy_pct": 92.0,
+      "qoq_pct": 21.0
+    },
+    {
+      "name": "data_center_compute_revenue",
+      "value_usd": 60000000000.0,
+      "yoy_pct": 77.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "data_center_networking_revenue",
+      "value_usd": 15000000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    },
+    {
+      "name": "free_cash_flow",
+      "value_usd": 49000000000.0,
+      "yoy_pct": null,
+      "qoq_pct": 40.0
+    }
+  ],
+  "guidance_direction": "raised",
+  "guidance_detail": "Q2 FY2027 revenue guided to $91B +/-2% (up ~11% sequentially), driven by data center; full-year gross margin expected mid-70s; FY27 tax rate lowered to 16-18% from prior 17-19%; quarterly dividend raised $0.01->$0.25; new $80B buyback on top of $39B remaining.",
+  "key_themes": [
+    "demand_strength",
+    "new_product_ramp",
+    "market_share_gain",
+    "capital_return",
+    "supply_constraint"
+  ],
+  "risk_factors": [
+    "China export controls / H200 license uncertainty - no China data-center compute revenue in outlook",
+    "Supply constraints - expects to remain supply-constrained through Vera Rubin's product life",
+    "Higher memory and system prices softened consumer edge demand"
+  ],
+  "management_tone": "confident",
+  "confidence": {
+    "metrics": 0.82,
+    "guidance": 0.88,
+    "tone": 0.95,
+    "themes": 0.78
+  },
+  "needs_review": true
+}

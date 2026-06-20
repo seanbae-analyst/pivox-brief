@@ -9,10 +9,11 @@ venv/
 # Env / secrets
 .env
 
-# Data: raw transcripts are licensed (FMP) — never commit; outputs are derived
+# Data: raw transcripts are publisher copyright — never commit.
+# Derived outputs ARE committed (the portfolio artifact); drafts are intermediate.
 data/transcripts/*.txt
 data/transcripts/*.json
-data/output/
+data/output/*.draft.json
 
 # OS / editor
 .DS_Store
