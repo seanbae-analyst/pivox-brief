@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Env / secrets
+.env
+
+# Data: raw transcripts are licensed (FMP) — never commit; outputs are derived
+data/transcripts/*.txt
+data/transcripts/*.json
+data/output/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
