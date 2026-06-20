@@ -77,6 +77,13 @@ __other__   # escape hatch
 - **캘리브레이션:** "confidence 0.9"가 실제로 ~90% 맞나? 깨지면 §6 자동승인이 무너짐.
 - 산출 목표 문장 예: *"임계값 0.85에서 전사본 72% 자동 처리, guidance 정확도 96%, 검토 부담 28%, 비용 $N."*
 ## 8. 아키텍처 / 스택
+
+> **무료 빌드 실측 (2026-06-20):** 아래 블록은 프로덕션/스케일 목표 아키텍처다. 실제 $0
+> 포트폴리오 빌드의 결정 — 저장 = repo 내 로컬 JSON(`data/output/`, Supabase 대신) ·
+> 스케줄 = 없음(on-demand, cron 제거) · 전사본 = 공개 출처 `.txt`(`data/transcripts/`,
+> FMP 선택) · 추출 = **Claude Code 자체를 엔진으로**($0; `engine/extract.py`는 API 스케일
+> 경로로 보존) · 대시보드 = 정적/후순위. 상세·실측 결과 = [CASE_STUDY.md](CASE_STUDY.md).
+
 ```
 FMP (전사본, 라이브) ──[GitHub Actions cron, 어닝시즌 주기 실행]
    ↓

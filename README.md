@@ -4,6 +4,7 @@ Turns long, free-text earnings-call transcripts into **comparable, standardized
 signal records** — and proves how trustworthy that standardization is.
 
 > Single source of truth: **[PROJECT.md](PROJECT.md)**. Every build decision defers to it.
+> 📊 Results & write-up: **[CASE_STUDY.md](CASE_STUDY.md)**.
 
 ## What it does
 Given an earnings transcript, the engine emits a typed `EarningsSignal` — guidance
@@ -16,7 +17,9 @@ This is a **data-standardization / intelligence tool, not an investment-signal t
 (PROJECT.md §10).
 
 ## Status
-**Phase 1** — extraction engine on a single transcript (NVDA Q1 FY2027). Phase plan: PROJECT.md §9.
+**Phases 0–3 done** (schema · extraction · confidence routing · eval harness) **+ case study**,
+on a 4-ticker set (NVDA, MSFT, GOOGL, AMD), built for **$0**. Latest eval (n=4): guidance / tone /
+metrics 100%, themes F1 0.95. Phase plan: PROJECT.md §9; results: [CASE_STUDY.md](CASE_STUDY.md).
 
 ## Layout
 ```
