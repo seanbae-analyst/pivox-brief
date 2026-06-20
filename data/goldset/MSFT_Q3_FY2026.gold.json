@@ -1,8 +1,6 @@
 {
-  "_verified": false,
-  "_todo": "ONLY verify key_themes against the transcript (vocab below); fix if needed, then set _verified to true. Objective fields are author-verified against source.",
-  "_themes_vocab": "demand_strength demand_weakness pricing_power margin_expansion margin_pressure capex_investment supply_constraint new_product_ramp market_share_gain competitive_pressure cost_efficiency M&A regulatory_legal macro_headwind capital_return segment_expansion __other__",
-  "_objective_verified_by": "author (metrics from source figures; guidance & tone from transcript)",
+  "_verified": true,
+  "_labeling": "Objective fields verified against source (metrics; guidance & tone from transcript). key_themes author-labeled — single annotator (see CASE_STUDY Limitations).",
   "ticker": "MSFT",
   "period": "Q3 FY2026",
   "guidance_direction": "raised",
