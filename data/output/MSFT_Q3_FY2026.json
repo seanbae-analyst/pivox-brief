@@ -1,0 +1,59 @@
+{
+  "ticker": "MSFT",
+  "period": "Q3 FY2026",
+  "call_date": "2026-04-29",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 82900000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    },
+    {
+      "name": "microsoft_cloud_revenue",
+      "value_usd": 54500000000.0,
+      "yoy_pct": 29.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "intelligent_cloud_revenue",
+      "value_usd": 34700000000.0,
+      "yoy_pct": 30.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "productivity_business_processes_revenue",
+      "value_usd": 35000000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    },
+    {
+      "name": "free_cash_flow",
+      "value_usd": 15800000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    }
+  ],
+  "guidance_direction": "raised",
+  "guidance_detail": "Q4 FY2026 revenue guided $86.7-87.8B (~13-15% growth); Intelligent Cloud +27-28%, Azure +39-40% cc; CY2026 capex raised to ~$190B (incl. ~$25B higher component pricing); AI business >$37B ARR up 123%.",
+  "key_themes": [
+    "demand_strength",
+    "capex_investment",
+    "new_product_ramp",
+    "margin_pressure",
+    "pricing_power"
+  ],
+  "risk_factors": [
+    "Gross margin pressure from heavy AI infrastructure investment (GM ~68%, down YoY)",
+    "Capacity / 'physical limitations' constraining ability to meet demand",
+    "Component price inflation (~$25B added to CY2026 capex)"
+  ],
+  "management_tone": "confident",
+  "confidence": {
+    "metrics": 0.68,
+    "guidance": 0.78,
+    "tone": 0.9,
+    "themes": 0.75
+  },
+  "needs_review": true
+}

@@ -1,0 +1,59 @@
+{
+  "ticker": "AMD",
+  "period": "Q1 2026",
+  "call_date": "2026-05-06",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 10300000000.0,
+      "yoy_pct": 38.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "data_center_revenue",
+      "value_usd": 5800000000.0,
+      "yoy_pct": 57.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "client_and_gaming_revenue",
+      "value_usd": 3600000000.0,
+      "yoy_pct": 23.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "embedded_revenue",
+      "value_usd": 873000000.0,
+      "yoy_pct": 6.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "free_cash_flow",
+      "value_usd": 2600000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    }
+  ],
+  "guidance_direction": "raised",
+  "guidance_detail": "Q2 2026 revenue ~$11.2B +/-$300M (+46% YoY, ~+9% sequential); Q2 non-GAAP GM ~56%; raised server-CPU TAM to >35% CAGR / >$120B by 2030; Helios/MI450 ramp in H2 (Q3/Q4).",
+  "key_themes": [
+    "demand_strength",
+    "market_share_gain",
+    "new_product_ramp",
+    "supply_constraint",
+    "segment_expansion"
+  ],
+  "risk_factors": [
+    "Data Center AI revenue dipped sequentially on lower China revenue",
+    "Supply-chain tightness for the 2027 ramp",
+    "Consumer desktop/gaming demand soft on memory-price inflation in 2H"
+  ],
+  "management_tone": "confident",
+  "confidence": {
+    "metrics": 0.9,
+    "guidance": 0.86,
+    "tone": 0.92,
+    "themes": 0.85
+  },
+  "needs_review": false
+}
