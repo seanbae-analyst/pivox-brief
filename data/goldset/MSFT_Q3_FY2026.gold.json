@@ -12,6 +12,7 @@
     "margin_pressure",
     "pricing_power"
   ],
+  "ratios": {"gross_margin": 68.0, "eps": 4.27},
   "metrics": {
     "total_revenue": 82900000000,
     "microsoft_cloud_revenue": 54500000000,

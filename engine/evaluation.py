@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from engine.schema import EarningsSignal
+from engine.schema import EarningsSignal, RatioUnit
 
 
 # ── per-record scoring ────────────────────────────────────────────────────────
@@ -28,6 +28,9 @@ class FieldScores:
     metrics_accuracy: float   # fraction of gold metrics matched within tolerance
     metrics_matched: int
     metrics_total: int
+    ratios_accuracy: float = 1.0   # fraction of gold ratios matched (Schema v1)
+    ratios_matched: int = 0
+    ratios_total: int = 0
 
     @property
     def overall(self) -> float:
@@ -66,6 +69,27 @@ def score_metrics(
     return matched, total, (matched / total if total else 1.0)
 
 
+def score_ratios(
+    pred: EarningsSignal, gold_ratios: dict[str, float], *, pct_tol: float = 1.0, rel_tol: float = 0.02
+) -> tuple[int, int, float]:
+    """Fraction of gold ratios matched by name (percent: +/-1.0pt, per-share: rel tol)."""
+    pred_by_name = {r.name: r for r in pred.ratios}
+    matched = 0
+    for name, gold_val in gold_ratios.items():
+        pr = pred_by_name.get(name)
+        if pr is None or gold_val is None:
+            continue
+        if pr.unit == RatioUnit.percent:
+            ok = abs(pr.value - gold_val) <= pct_tol
+        else:
+            denom = max(abs(pr.value), abs(gold_val), 1.0)
+            ok = abs(pr.value - gold_val) / denom <= rel_tol
+        if ok:
+            matched += 1
+    total = len(gold_ratios)
+    return matched, total, (matched / total if total else 1.0)
+
+
 def score_record(pred: EarningsSignal, gold: dict) -> FieldScores:
     """Score one prediction against its gold label across the gradeable fields (§7)."""
     guidance_correct = pred.guidance_direction.value == gold["guidance_direction"]
@@ -79,8 +103,10 @@ def score_record(pred: EarningsSignal, gold: dict) -> FieldScores:
     f1 = _f1(precision, recall)
 
     m_matched, m_total, m_acc = score_metrics(pred, gold.get("metrics", {}))
+    r_matched, r_total, r_acc = score_ratios(pred, gold.get("ratios", {}))
     return FieldScores(
-        guidance_correct, tone_correct, precision, recall, f1, m_acc, m_matched, m_total
+        guidance_correct, tone_correct, precision, recall, f1, m_acc, m_matched, m_total,
+        ratios_accuracy=r_acc, ratios_matched=r_matched, ratios_total=r_total,
     )
 
 

@@ -41,6 +41,19 @@ class Metric(BaseModel):
     qoq_pct: Optional[float] = None
 
 
+class RatioUnit(str, Enum):
+    percent = "percent"      # e.g. gross_margin = 74.9
+    per_share = "per_share"  # e.g. eps = 1.87 (USD per share)
+
+
+class Ratio(BaseModel):
+    """Non-USD figures that don't fit Metric — margins, EPS (Schema v1; closes §5 gap)."""
+
+    name: str          # e.g. "gross_margin", "operating_margin", "eps"
+    value: float
+    unit: RatioUnit
+
+
 class Confidence(BaseModel):
     """Per-field confidence in [0, 1] (PROJECT.md §6)."""
 
@@ -61,6 +74,7 @@ class EarningsSignalDraft(BaseModel):
     period: str                            # e.g. "Q1 FY2027"
     call_date: str                         # ISO 8601
     headline_metrics: list[Metric]
+    ratios: list[Ratio] = []               # margins, EPS — Schema v1 (optional, back-compat)
     guidance_direction: GuidanceDirection
     guidance_detail: Optional[str] = None
     key_themes: list[KeyTheme]             # controlled vocabulary only (§4)

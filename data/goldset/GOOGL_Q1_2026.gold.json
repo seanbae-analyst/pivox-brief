@@ -12,6 +12,7 @@
     "supply_constraint",
     "segment_expansion"
   ],
+  "ratios": {"eps": 5.11},
   "metrics": {
     "total_revenue": 109900000000,
     "search_advertising_revenue": 60400000000,

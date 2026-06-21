@@ -12,6 +12,7 @@
     "supply_constraint",
     "capex_investment"
   ],
+  "ratios": {"gross_margin": 74.9},
   "metrics": {
     "total_revenue": 81615000000,
     "data_center_revenue": 75000000000,

@@ -34,6 +34,18 @@
       "qoq_pct": null
     }
   ],
+  "ratios": [
+    {
+      "name": "gross_margin",
+      "value": 68.0,
+      "unit": "percent"
+    },
+    {
+      "name": "eps",
+      "value": 4.27,
+      "unit": "per_share"
+    }
+  ],
   "guidance_direction": "raised",
   "guidance_detail": "Q4 FY2026 revenue guided $86.7-87.8B (~13-15% growth); Intelligent Cloud +27-28%, Azure +39-40% cc; CY2026 capex raised to ~$190B (incl. ~$25B higher component pricing); AI business >$37B ARR up 123%.",
   "key_themes": [

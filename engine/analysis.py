@@ -50,6 +50,17 @@ def metric_ranking(
     return sorted(rows, key=lambda x: -x[1])
 
 
+def ratio_ranking(signals: list[EarningsSignal], ratio_name: str) -> list[tuple[str, float]]:
+    """Rank tickers by a named ratio (e.g. gross_margin), desc — where disclosed."""
+    rows = []
+    for s in signals:
+        for r in s.ratios:
+            if r.name == ratio_name:
+                rows.append((s.ticker, r.value))
+                break
+    return sorted(rows, key=lambda x: -x[1])
+
+
 def headlines(signals: list[EarningsSignal]) -> list[str]:
     """Plain-language, comparative observations (no advice)."""
     out: list[str] = []
@@ -65,6 +76,9 @@ def headlines(signals: list[EarningsSignal]) -> list[str]:
     rr = metric_ranking(signals, "total_revenue", "yoy_pct")
     if rr:
         out.append(f"Fastest revenue growth: {rr[0][0]} (+{rr[0][1]:.0f}% YoY).")
+    gm = ratio_ranking(signals, "gross_margin")
+    if gm:
+        out.append(f"Highest gross margin: {gm[0][0]} ({gm[0][1]:.1f}%).")
     r, nn, rate = review_rate(signals)
     out.append(f"{r} of {nn} records flagged for human review ({rate:.0%}).")
     return out
@@ -77,6 +91,7 @@ class Intelligence:
     guidance: dict[str, int]
     tone: dict[str, int]
     revenue_growth: list[tuple[str, float]]
+    gross_margin: list[tuple[str, float]]
     review: tuple[int, int, float]
     headlines: list[str]
 
@@ -88,6 +103,7 @@ def analyze(signals: list[EarningsSignal]) -> Intelligence:
         guidance=guidance_distribution(signals),
         tone=tone_distribution(signals),
         revenue_growth=metric_ranking(signals, "total_revenue", "yoy_pct"),
+        gross_margin=ratio_ranking(signals, "gross_margin"),
         review=review_rate(signals),
         headlines=headlines(signals),
     )

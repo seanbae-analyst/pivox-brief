@@ -61,6 +61,8 @@ def build_data() -> dict:
             "tone_ok": sc.tone_correct,
             "themes_f1": round(sc.themes_f1, 2),
             "metrics_acc": round(sc.metrics_accuracy, 2),
+            "ratios_acc": round(sc.ratios_accuracy, 2),
+            "ratios_total": sc.ratios_total,
             "overall": round(sc.overall, 2),
         })
     sweep = [
@@ -82,6 +84,7 @@ def build_data() -> dict:
         "themes": [t.value for t in s.key_themes], "risk_factors": s.risk_factors,
         "metrics": [{"name": m.name, "value_usd": m.value_usd, "yoy": m.yoy_pct, "qoq": m.qoq_pct}
                     for m in s.headline_metrics],
+        "ratios": [{"name": r.name, "value": r.value, "unit": r.unit.value} for r in s.ratios],
         "confidence": {"metrics": s.confidence.metrics, "guidance": s.confidence.guidance,
                        "tone": s.confidence.tone, "themes": s.confidence.themes,
                        "min": round(s.confidence.min_dim(), 2)},
@@ -98,6 +101,7 @@ def build_data() -> dict:
             "guidance": intel.guidance,
             "tone": intel.tone,
             "revenue_growth": intel.revenue_growth,
+            "gross_margin": intel.gross_margin,
             "review": list(intel.review),
         },
     }
@@ -205,6 +209,8 @@ function renderIntel(){
   const rg=$('div','card');rg.append($('h3',null,'Revenue growth (YoY)'));
   rg.append(bars(DATA.intel.revenue_growth,pct));v.append(rg);
 
+  if((DATA.intel.gross_margin||[]).length){const gm=$('div','card');gm.append($('h3',null,'Gross margin (where disclosed)'));gm.append(bars(DATA.intel.gross_margin,x=>x.toFixed(1)+'%'));v.append(gm);}
+
   const co=$('div','card');co.append($('h3',null,'Companies'));
   const grid=$('div','grid');
   DATA.signals.forEach(s=>{
@@ -218,6 +224,7 @@ function renderIntel(){
     c.append(badges);
     const rev=s.metrics.find(m=>m.name==='total_revenue');
     if(rev)c.append($('div','m','revenue '+usd(rev.value_usd)+' '+pct(rev.yoy)));
+    (s.ratios||[]).forEach(r=>c.append($('div','m',r.name.replace(/_/g,' ')+' '+(r.unit==='percent'?r.value.toFixed(1)+'%':'$'+r.value.toFixed(2)))));
     const th=$('div');s.themes.forEach(t=>th.append($('span','theme',t)));c.append(th);
     grid.append(c);
   });
@@ -229,8 +236,8 @@ function renderPerf(){
   v.append($('div','headline',e.headline));
 
   const ac=$('div','card');ac.append($('h3',null,'Per-record accuracy (vs verified goldset)'));
-  let h='<table><tr><th>Ticker</th><th>Guidance</th><th>Tone</th><th class="num">Themes F1</th><th class="num">Metrics</th><th class="num">Overall</th></tr>';
-  e.records.forEach(r=>{h+=`<tr><td>${r.ticker}</td><td class="${r.guidance_ok?'ok':'x'}">${r.guidance_ok?'\\u2713':'\\u2717'}</td><td class="${r.tone_ok?'ok':'x'}">${r.tone_ok?'\\u2713':'\\u2717'}</td><td class="num">${r.themes_f1.toFixed(2)}</td><td class="num">${r.metrics_acc.toFixed(2)}</td><td class="num">${r.overall.toFixed(2)}</td></tr>`;});
+  let h='<table><tr><th>Ticker</th><th>Guidance</th><th>Tone</th><th class="num">Themes F1</th><th class="num">Metrics</th><th class="num">Ratios</th><th class="num">Overall</th></tr>';
+  e.records.forEach(r=>{h+=`<tr><td>${r.ticker}</td><td class="${r.guidance_ok?'ok':'x'}">${r.guidance_ok?'\\u2713':'\\u2717'}</td><td class="${r.tone_ok?'ok':'x'}">${r.tone_ok?'\\u2713':'\\u2717'}</td><td class="num">${r.themes_f1.toFixed(2)}</td><td class="num">${r.metrics_acc.toFixed(2)}</td><td class="num">${r.ratios_total?r.ratios_acc.toFixed(2):'\\u2014'}</td><td class="num">${r.overall.toFixed(2)}</td></tr>`;});
   h+='</table>';ac.innerHTML+=h;v.append(ac);
 
   const sc=$('div','card');sc.append($('h3',null,'Threshold sweep (auto-approve at min-confidence \\u2265 \\u03c4)'));

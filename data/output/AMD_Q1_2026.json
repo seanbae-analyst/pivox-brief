@@ -34,6 +34,23 @@
       "qoq_pct": null
     }
   ],
+  "ratios": [
+    {
+      "name": "gross_margin",
+      "value": 55.0,
+      "unit": "percent"
+    },
+    {
+      "name": "operating_margin",
+      "value": 25.0,
+      "unit": "percent"
+    },
+    {
+      "name": "eps",
+      "value": 1.37,
+      "unit": "per_share"
+    }
+  ],
   "guidance_direction": "raised",
   "guidance_detail": "Q2 2026 revenue ~$11.2B +/-$300M (+46% YoY, ~+9% sequential); Q2 non-GAAP GM ~56%; raised server-CPU TAM to >35% CAGR / >$120B by 2030; Helios/MI450 ramp in H2 (Q3/Q4).",
   "key_themes": [

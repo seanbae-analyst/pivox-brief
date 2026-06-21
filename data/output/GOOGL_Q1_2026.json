@@ -34,6 +34,13 @@
       "qoq_pct": null
     }
   ],
+  "ratios": [
+    {
+      "name": "eps",
+      "value": 5.11,
+      "unit": "per_share"
+    }
+  ],
   "guidance_direction": "raised",
   "guidance_detail": "2026 capex guidance raised to $180-190B; 2027 capex expected to significantly increase; Cloud backlog ~$462B (>50% converts within 24 months); compute-constrained near term.",
   "key_themes": [

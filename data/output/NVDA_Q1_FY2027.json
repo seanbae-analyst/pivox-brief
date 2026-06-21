@@ -34,6 +34,13 @@
       "qoq_pct": 40.0
     }
   ],
+  "ratios": [
+    {
+      "name": "gross_margin",
+      "value": 74.9,
+      "unit": "percent"
+    }
+  ],
   "guidance_direction": "raised",
   "guidance_detail": "Q2 FY2027 revenue guided to $91B +/-2% (up ~11% sequentially), driven by data center; full-year gross margin expected mid-70s; FY27 tax rate lowered to 16-18% from prior 17-19%; quarterly dividend raised $0.01->$0.25; new $80B buyback on top of $39B remaining.",
   "key_themes": [

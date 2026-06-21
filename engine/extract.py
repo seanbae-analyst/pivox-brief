@@ -35,6 +35,8 @@ fits. Prefer the 2-5 themes the transcript actually emphasizes, not every theme 
 - headline_metrics: the figures management leads with (revenue, key segments, margins, \
 EPS). Normalize every value to absolute USD in value_usd (e.g. "$81.6 billion" -> \
 81600000000). Prefer the most precise figure stated. Leave a field null if not stated.
+- ratios: capture non-USD figures that don't fit a USD metric — gross_margin / \
+operating_margin as unit "percent" (e.g. 74.9), EPS as unit "per_share". Only what's stated.
 - guidance_direction: did management raise / lower / maintain forward guidance vs the \
 prior outlook, or was none given (not_given)?
 - management_tone: the overall posture across the call.

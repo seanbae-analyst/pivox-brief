@@ -12,6 +12,7 @@
     "supply_constraint",
     "segment_expansion"
   ],
+  "ratios": {"gross_margin": 55.0, "operating_margin": 25.0, "eps": 1.37},
   "metrics": {
     "total_revenue": 10300000000,
     "data_center_revenue": 5800000000,
