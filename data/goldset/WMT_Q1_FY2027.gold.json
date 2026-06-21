@@ -1,0 +1,11 @@
+{
+  "_verified": true,
+  "_labeling": "Objective fields verified against source; key_themes author-labeled (single annotator).",
+  "ticker": "WMT",
+  "period": "Q1 FY2027",
+  "guidance_direction": "maintained",
+  "management_tone": "confident",
+  "key_themes": ["demand_strength", "margin_expansion", "cost_efficiency", "new_product_ramp", "macro_headwind"],
+  "ratios": {"eps": 0.66},
+  "metrics": {"total_revenue": 177800000000, "operating_income": 7500000000}
+}

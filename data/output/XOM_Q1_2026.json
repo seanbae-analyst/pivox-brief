@@ -1,0 +1,36 @@
+{
+  "ticker": "XOM",
+  "period": "Q1 2026",
+  "call_date": "2026-05-01",
+  "headline_metrics": [
+    {
+      "name": "energy_products_earnings",
+      "value_usd": 2800000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    }
+  ],
+  "ratios": [],
+  "guidance_direction": "maintained",
+  "guidance_detail": "Permian on track to 1.8M boe/d in 2026 (value over volume); Golden Pass LNG Train 1 first LNG (Mar), Trains 2/3 by end-2026/Q2 2027; upstream +8% YoY ex-disruptions.",
+  "key_themes": [
+    "capex_investment",
+    "supply_constraint",
+    "macro_headwind",
+    "cost_efficiency",
+    "new_product_ramp"
+  ],
+  "risk_factors": [
+    "Qatar LNG train damage: 3-5 year repair (~3% of global production)",
+    "Ongoing Middle East conflict; 'market has not seen the full impact'",
+    "Geopolitical/weather disruptions (Kazakhstan drone attacks, Permian winter storm)"
+  ],
+  "management_tone": "mixed",
+  "confidence": {
+    "metrics": 0.55,
+    "guidance": 0.78,
+    "tone": 0.78,
+    "themes": 0.75
+  },
+  "needs_review": true
+}

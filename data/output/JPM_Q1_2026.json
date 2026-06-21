@@ -1,0 +1,52 @@
+{
+  "ticker": "JPM",
+  "period": "Q1 2026",
+  "call_date": "2026-04-14",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 50500000000.0,
+      "yoy_pct": 10.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "net_income",
+      "value_usd": 16500000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    }
+  ],
+  "ratios": [
+    {
+      "name": "eps",
+      "value": 5.94,
+      "unit": "per_share"
+    },
+    {
+      "name": "rotce",
+      "value": 23.0,
+      "unit": "percent"
+    }
+  ],
+  "guidance_direction": "maintained",
+  "guidance_detail": "FY2026 NII ex-Markets ~$95B, total NII ~$103B, adjusted expenses ~$105B (maintained); card NCO ~3.4%; Basel III endgame / G-SIB to require ~4% more CET1.",
+  "key_themes": [
+    "regulatory_legal",
+    "demand_strength",
+    "macro_headwind",
+    "competitive_pressure"
+  ],
+  "risk_factors": [
+    "Basel III endgame / G-SIB surcharge: ~4% more CET1, ~$20B additional capital by 2028",
+    "Cyber risk called the 'largest risk'; AI makes it harder",
+    "Credit-cycle losses expected 'worse than people think'; ~$50B private-credit exposure"
+  ],
+  "management_tone": "mixed",
+  "confidence": {
+    "metrics": 0.8,
+    "guidance": 0.82,
+    "tone": 0.85,
+    "themes": 0.72
+  },
+  "needs_review": true
+}

@@ -1,0 +1,11 @@
+{
+  "_verified": true,
+  "_labeling": "Objective fields verified against source; key_themes author-labeled (single annotator). 'demand_strength' dropped on re-read (a bank's strong IB/markets revenue maps poorly to the demand vocab).",
+  "ticker": "JPM",
+  "period": "Q1 2026",
+  "guidance_direction": "maintained",
+  "management_tone": "mixed",
+  "key_themes": ["regulatory_legal", "macro_headwind", "competitive_pressure"],
+  "ratios": {"eps": 5.94, "rotce": 23.0},
+  "metrics": {"total_revenue": 50500000000, "net_income": 16500000000}
+}

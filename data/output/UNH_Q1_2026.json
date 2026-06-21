@@ -1,0 +1,47 @@
+{
+  "ticker": "UNH",
+  "period": "Q1 2026",
+  "call_date": "2026-04-21",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 111700000000.0,
+      "yoy_pct": 2.0,
+      "qoq_pct": null
+    }
+  ],
+  "ratios": [
+    {
+      "name": "medical_care_ratio",
+      "value": 83.9,
+      "unit": "percent"
+    },
+    {
+      "name": "eps",
+      "value": 7.23,
+      "unit": "per_share"
+    }
+  ],
+  "guidance_direction": "raised",
+  "guidance_detail": "FY2026 adjusted EPS raised to above $18.25 (modest increase); MCR 83.9% (improved from 84.8%); ~10% Medicare Advantage medical cost trend assumed.",
+  "key_themes": [
+    "cost_efficiency",
+    "margin_pressure",
+    "regulatory_legal",
+    "pricing_power",
+    "new_product_ramp"
+  ],
+  "risk_factors": [
+    "Medicaid: expects membership attrition and negative margins in 2026",
+    "Elevated medical cost trend (~10% Medicare Advantage)",
+    "Regulatory: PBM legislation + Tennessee pharmacy law (~150k specialty patients)"
+  ],
+  "management_tone": "mixed",
+  "confidence": {
+    "metrics": 0.85,
+    "guidance": 0.8,
+    "tone": 0.82,
+    "themes": 0.75
+  },
+  "needs_review": true
+}

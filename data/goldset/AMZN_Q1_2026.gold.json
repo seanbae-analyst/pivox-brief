@@ -1,0 +1,11 @@
+{
+  "_verified": true,
+  "_labeling": "Objective fields verified against source; key_themes author-labeled (single annotator).",
+  "ticker": "AMZN",
+  "period": "Q1 2026",
+  "guidance_direction": "maintained",
+  "management_tone": "confident",
+  "key_themes": ["demand_strength", "capex_investment", "new_product_ramp", "supply_constraint", "margin_expansion"],
+  "ratios": {"operating_margin": 13.1},
+  "metrics": {"total_revenue": 181500000000, "north_america_revenue": 104100000000, "international_revenue": 39800000000, "aws_revenue": 37600000000, "operating_income": 23900000000}
+}

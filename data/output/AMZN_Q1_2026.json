@@ -1,0 +1,66 @@
+{
+  "ticker": "AMZN",
+  "period": "Q1 2026",
+  "call_date": "2026-04-29",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 181500000000.0,
+      "yoy_pct": 17.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "north_america_revenue",
+      "value_usd": 104100000000.0,
+      "yoy_pct": 12.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "international_revenue",
+      "value_usd": 39800000000.0,
+      "yoy_pct": 11.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "aws_revenue",
+      "value_usd": 37600000000.0,
+      "yoy_pct": 28.0,
+      "qoq_pct": null
+    },
+    {
+      "name": "operating_income",
+      "value_usd": 23900000000.0,
+      "yoy_pct": null,
+      "qoq_pct": null
+    }
+  ],
+  "ratios": [
+    {
+      "name": "operating_margin",
+      "value": 13.1,
+      "unit": "percent"
+    }
+  ],
+  "guidance_direction": "maintained",
+  "guidance_detail": "Q2 2026 net sales $194-199B, operating income $20-24B; Q1 capex $43.2B (AWS/genAI); AWS backlog $364B; no explicit FY raise.",
+  "key_themes": [
+    "demand_strength",
+    "capex_investment",
+    "new_product_ramp",
+    "supply_constraint",
+    "margin_expansion"
+  ],
+  "risk_factors": [
+    "Memory costs spiked; supply volatility threatens capex and supply chain",
+    "Transportation/fuel inflation (partly offset by new FBA surcharge)",
+    "Near-term free-cash-flow headwinds as capex outpaces revenue"
+  ],
+  "management_tone": "confident",
+  "confidence": {
+    "metrics": 0.85,
+    "guidance": 0.78,
+    "tone": 0.82,
+    "themes": 0.8
+  },
+  "needs_review": true
+}

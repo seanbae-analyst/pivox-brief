@@ -1,0 +1,11 @@
+{
+  "_verified": true,
+  "_labeling": "Objective fields verified against source; key_themes author-labeled (single annotator). 'new_product_ramp' dropped on re-read (LNG/Permian projects are capex, not new-product).",
+  "ticker": "XOM",
+  "period": "Q1 2026",
+  "guidance_direction": "maintained",
+  "management_tone": "mixed",
+  "key_themes": ["capex_investment", "supply_constraint", "macro_headwind", "cost_efficiency"],
+  "ratios": {},
+  "metrics": {"energy_products_earnings": 2800000000}
+}

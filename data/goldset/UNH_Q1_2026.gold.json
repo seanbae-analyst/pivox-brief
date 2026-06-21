@@ -1,0 +1,11 @@
+{
+  "_verified": true,
+  "_labeling": "Objective fields verified against source; key_themes author-labeled (single annotator).",
+  "ticker": "UNH",
+  "period": "Q1 2026",
+  "guidance_direction": "raised",
+  "management_tone": "mixed",
+  "key_themes": ["cost_efficiency", "margin_pressure", "regulatory_legal", "pricing_power", "new_product_ramp"],
+  "ratios": {"medical_care_ratio": 83.9, "eps": 7.23},
+  "metrics": {"total_revenue": 111700000000}
+}

@@ -1,0 +1,48 @@
+{
+  "ticker": "WMT",
+  "period": "Q1 FY2027",
+  "call_date": "2026-05-21",
+  "headline_metrics": [
+    {
+      "name": "total_revenue",
+      "value_usd": 177800000000.0,
+      "yoy_pct": 7.3,
+      "qoq_pct": null
+    },
+    {
+      "name": "operating_income",
+      "value_usd": 7500000000.0,
+      "yoy_pct": 5.0,
+      "qoq_pct": null
+    }
+  ],
+  "ratios": [
+    {
+      "name": "eps",
+      "value": 0.66,
+      "unit": "per_share"
+    }
+  ],
+  "guidance_direction": "maintained",
+  "guidance_detail": "FY27 cc sales +3.5-4.5%, operating income +6-8%, EPS $2.75-2.85; Q2 sales +4-5%, EPS $0.72-0.74 (maintained).",
+  "key_themes": [
+    "demand_strength",
+    "margin_expansion",
+    "cost_efficiency",
+    "new_product_ramp",
+    "macro_headwind"
+  ],
+  "risk_factors": [
+    "Higher fuel costs ($175M in Q1) pressuring future retail inflation",
+    "Consumer pressure (Sam's Club fuel gallons below 10, first time since 2022)",
+    "Maximum fair pricing legislation headwind on health & wellness sales"
+  ],
+  "management_tone": "confident",
+  "confidence": {
+    "metrics": 0.85,
+    "guidance": 0.85,
+    "tone": 0.7,
+    "themes": 0.78
+  },
+  "needs_review": true
+}
