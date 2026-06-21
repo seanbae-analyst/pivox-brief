@@ -50,34 +50,31 @@ transcript ──► AI extraction (structured output) ──► Pydantic valida
 | Confidence threshold | `min(dim) < τ → review`; **τ set by eval** | the threshold is a data decision, not a guess |
 | $0 runtime | **Claude Code as the extraction engine** | zero marginal cost using existing tooling; `extract.py` kept as the API scale path |
 
-## 4. Results (n = 4 — NVDA, MSFT, GOOGL, AMD)
-| Ticker | guidance | tone | themes F1 | metrics | overall |
-|---|:--:|:--:|:--:|:--:|:--:|
-| NVDA  | ✓ | ✓ | 0.80 | 1.00 | 0.95 |
-| MSFT  | ✓ | ✓ | 1.00 | 1.00 | 1.00 |
-| GOOGL | ✓ | ✓ | 1.00 | 1.00 | 1.00 |
-| AMD   | ✓ | ✓ | 1.00 | 1.00 | 1.00 |
+## 4. Results (n = 9 — NVDA, MSFT, GOOGL, AMD, AMZN, JPM, WMT, XOM, UNH)
+A 9-company watchlist spanning AI/tech plus a bank, retailer, energy major, and health insurer:
+guidance **100%**, tone **100%**, metrics **100%**, themes F1 **~0.95** (NVDA 0.80, JPM 0.86,
+XOM 0.89; the rest 1.00 — the misses are genuine theme-mapping judgment calls, not extraction errors).
 
 **Threshold sweep** (auto-approve at `min confidence ≥ τ`):
 
 | τ | auto-processed | accuracy of auto-approved | review burden |
 |---|:--:|:--:|:--:|
-| 0.70 | 75% | 0.98 | 25% |
-| 0.75 | 75% | 0.98 | 25% |
-| 0.80 | 50% | 1.00 | 50% |
-| 0.85 | 25% | 1.00 | 75% |
+| 0.70 | 78% | 0.99 | 22% |
+| 0.75 | 56% | 0.99 | 44% |
+| 0.80 | 22% | 1.00 | 78% |
+| 0.85 | 11% | 1.00 | 89% |
 | 0.90 | 0%  | —    | 100% |
 
-> **At threshold 0.85: 25% auto-processed, guidance accuracy 100%, review burden 75% (n=4).**
+> **At threshold 0.85: 11% auto-processed, guidance accuracy 100%, review burden 89% (n=9).**
 
 ## 5. What the eval taught me (the point of §7)
-- **The default threshold (0.85) is too conservative for this set.** Dropping to 0.80 *doubles*
-  auto-approval (25% → 50%) at **100%** accuracy on the auto-approved subset. The eval is
-  literally telling me where to put the §6 knob.
-- **The model was *under-confident* on messy input.** MSFT's source was a garbled capture, so
-  the model self-reported metrics confidence 0.68 — yet every metric value was correct. Useful
-  signal: "I don't trust this source" and "this number is wrong" are different doubts and should
-  be scored separately.
+- **The default threshold (0.85) is far too conservative for this set.** At 0.85 only 11%
+  auto-approves; dropping to 0.70 lifts that to **78%** at **0.99** accuracy on the auto-approved
+  subset. The eval is literally telling me where to put the §6 knob (~0.70–0.75 here).
+- **The model is systematically *under-confident* on thin/messy input.** MSFT (garbled capture,
+  metrics confidence 0.68) and XOM (sparse disclosure — no revenue/EPS stated, confidence 0.55)
+  both self-doubted, yet every metric they *did* report was correct. "I don't trust this source"
+  and "this number is wrong" are different doubts and should be scored separately.
 - **Schema v0 has a real gap.** Gross margin (74.9%) and EPS don't fit a USD-only `Metric`, so
   they're silently dropped. → **Schema v1: a percent / per-share metric type.**
 - **Metric-name matching is brittle.** Scoring matches metrics by exact name; `total_revenue`
@@ -107,16 +104,16 @@ incurred here**: `engine/extract.py` is the ready-to-run API path; the portfolio
 through Claude Code at zero marginal cost.
 
 ## 8. Limitations (honest)
-- **n = 4** — calibration is *illustrative, not statistical*. The harness is the deliverable; N grows.
+- **n = 9** — better, but still *illustrative, not statistical*. The harness is the deliverable; N grows.
 - **Single-annotator goldset** — I labeled both the extractions and the truth. Themes accuracy is
   therefore *intra-annotator consistency*; NVDA's 0.80 reflects my own two reads diverging
   (`market_share_gain` vs `capex_investment`). An independent labeler is future work.
-- **3 of 4 transcripts are condensed captures** (WebFetch summarized long pages), so objective
+- **8 of 9 transcripts are condensed captures** (WebFetch summarized long pages), so objective
   extraction was easier than full messy text. Only NVDA used a near-verbatim transcript.
 - **TSLA deferred** — no free full transcript was readily fetchable.
 
 ## 9. Roadmap
-1. Scale to 20–40 transcripts → calibration becomes meaningful.
+1. Scale further (now 9 → 20–40) → calibration becomes statistically meaningful.
 2. Independent themes labeling (remove the intra-annotator caveat).
 3. Schema v1 — percent/per-share metric type (margins, EPS) + metric-name normalization.
 4. Full verbatim transcripts for the whole set.

@@ -17,9 +17,9 @@ This is a **data-standardization / intelligence tool, not an investment-signal t
 (PROJECT.md §10).
 
 ## Status
-**Phases 0–3 done** (schema · extraction · confidence routing · eval harness) **+ case study**,
-on a 4-ticker set (NVDA, MSFT, GOOGL, AMD), built for **$0**. Latest eval (n=4): guidance / tone /
-metrics 100%, themes F1 0.95. Phase plan: PROJECT.md §9; results: [CASE_STUDY.md](CASE_STUDY.md).
+**Phases 0–6 covered** (schema · extraction · confidence routing · eval harness · dashboard · case study)
+on a 9-company watchlist (tech + bank/retail/energy/healthcare), built for **$0**. Latest eval (n=9):
+guidance / tone / metrics 100%, themes F1 ~0.95. Phase plan: PROJECT.md §9; results: [CASE_STUDY.md](CASE_STUDY.md).
 
 ## Layout
 ```
