@@ -107,3 +107,50 @@ def analyze(signals: list[EarningsSignal]) -> Intelligence:
         review=review_rate(signals),
         headlines=headlines(signals),
     )
+
+
+# ── market reaction (L1/L2) — descriptive only, NOT investment advice (§10) ────
+_GUIDANCE_SCORE = {"raised": 1, "maintained": 0, "lowered": -1, "not_given": 0}
+_TONE_SCORE = {"confident": 1, "mixed": 0, "cautious": -1, "defensive": -1}
+
+
+def signal_lean(sig: EarningsSignal) -> int:
+    """Coarse signal direction in {-1, 0, 1} from guidance + tone (heuristic)."""
+    s = _GUIDANCE_SCORE.get(sig.guidance_direction.value, 0) + _TONE_SCORE.get(
+        sig.management_tone.value, 0
+    )
+    return (s > 0) - (s < 0)
+
+
+def _lean_label(v: int) -> str:
+    return {1: "positive", 0: "neutral", -1: "negative"}[v]
+
+
+def reaction_by_lean(signals: list[EarningsSignal], reactions: dict) -> dict[str, float]:
+    """Average earnings-day return grouped by signal lean — does the signal align (L1)?"""
+    from collections import defaultdict
+
+    buckets: dict[str, list[float]] = defaultdict(list)
+    for s in signals:
+        r = reactions.get(s.ticker)
+        if r is None:
+            continue
+        buckets[_lean_label(signal_lean(s))].append(r["event_return_pct"])
+    return {k: round(sum(v) / len(v), 2) for k, v in buckets.items()}
+
+
+def divergences(signals: list[EarningsSignal], reactions: dict, *, min_move: float = 2.0) -> list[dict]:
+    """Cases where the signal and the market reaction point opposite ways (L2)."""
+    out = []
+    for s in signals:
+        r = reactions.get(s.ticker)
+        if r is None:
+            continue
+        lean, ret = signal_lean(s), r["event_return_pct"]
+        if lean > 0 and ret <= -min_move:
+            out.append({"ticker": s.ticker, "lean": "positive", "reaction": ret,
+                        "note": "signal positive, market fell"})
+        elif lean < 0 and ret >= min_move:
+            out.append({"ticker": s.ticker, "lean": "negative", "reaction": ret,
+                        "note": "signal negative, market rose"})
+    return sorted(out, key=lambda d: abs(d["reaction"]), reverse=True)

@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.analysis import analyze  # noqa: E402
+from engine.analysis import analyze, divergences, reaction_by_lean  # noqa: E402
 from engine.evaluation import (  # noqa: E402
     calibration,
     score_record,
@@ -50,6 +50,8 @@ def load_golds() -> dict:
 def build_data() -> dict:
     signals = load_signals()
     golds = load_golds()
+    reactions_path = ROOT / "data" / "reactions.json"
+    reactions = json.loads(reactions_path.read_text(encoding="utf-8")) if reactions_path.exists() else {}
     pairs = [(s, golds[(s.ticker, s.period)]) for s in signals if (s.ticker, s.period) in golds]
 
     eval_records = []
@@ -89,6 +91,7 @@ def build_data() -> dict:
                        "tone": s.confidence.tone, "themes": s.confidence.themes,
                        "min": round(s.confidence.min_dim(), 2)},
         "needs_review": s.needs_review,
+        "reaction": (reactions.get(s.ticker) or {}).get("event_return_pct"),
     } for s in signals]
 
     return {
@@ -103,6 +106,11 @@ def build_data() -> dict:
             "revenue_growth": intel.revenue_growth,
             "gross_margin": intel.gross_margin,
             "review": list(intel.review),
+        },
+        "market": {
+            "by_lean": reaction_by_lean(signals, reactions),
+            "divergences": divergences(signals, reactions),
+            "have_data": bool(reactions),
         },
     }
 
@@ -211,6 +219,8 @@ function renderIntel(){
 
   if((DATA.intel.gross_margin||[]).length){const gm=$('div','card');gm.append($('h3',null,'Gross margin (where disclosed)'));gm.append(bars(DATA.intel.gross_margin,x=>x.toFixed(1)+'%'));v.append(gm);}
 
+  if(DATA.market&&DATA.market.have_data){const mk=DATA.market;const mc=$('div','card');mc.append($('h3',null,'Market reaction vs signal (earnings-day return)'));mc.append($('div',null,'<b style="font-size:12px">Avg reaction by signal lean</b>'));mc.append(bars(Object.entries(mk.by_lean),pct));if(mk.divergences.length){mc.append($('div',null,'<b style="font-size:12px;margin-top:8px;display:block">Signal &harr; market divergences (headline said one thing, market did another)</b>'));const ul=$('ul','obs');mk.divergences.forEach(d=>ul.append($('li',null,`<b>${d.ticker}</b>: ${d.note} (${pct(d.reaction)})`)));mc.append(ul);}v.append(mc);}
+
   const co=$('div','card');co.append($('h3',null,'Companies'));
   const grid=$('div','grid');
   DATA.signals.forEach(s=>{
@@ -225,6 +235,7 @@ function renderIntel(){
     const rev=s.metrics.find(m=>m.name==='total_revenue');
     if(rev)c.append($('div','m','revenue '+usd(rev.value_usd)+' '+pct(rev.yoy)));
     (s.ratios||[]).forEach(r=>c.append($('div','m',r.name.replace(/_/g,' ')+' '+(r.unit==='percent'?r.value.toFixed(1)+'%':'$'+r.value.toFixed(2)))));
+    if(s.reaction!=null){const rc=$('div','m');rc.innerHTML='earnings-day <b style="color:'+(s.reaction>=0?'var(--up)':'var(--down)')+'">'+pct(s.reaction)+'</b>';c.append(rc);}
     const th=$('div');s.themes.forEach(t=>th.append($('span','theme',t)));c.append(th);
     grid.append(c);
   });
@@ -258,7 +269,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
 });
 
 chips();renderIntel();renderPerf();
-document.getElementById('foot').innerHTML='n='+DATA.n+' \\u2014 illustrative, not statistical. Goldset is single-annotator (themes = intra-annotator). 3/4 transcripts are condensed sources. Built for $0 by build_dashboard.py. See CASE_STUDY.md.';
+document.getElementById('foot').innerHTML='n='+DATA.n+' \\u2014 illustrative, not statistical. Goldset single-annotator (themes intra-annotator). 8/9 transcripts condensed. Earnings-day reaction = close-before \\u2192 close-after (descriptive, not a trading signal). Built for $0. See CASE_STUDY.md.';
 </script>
 </body>
 </html>

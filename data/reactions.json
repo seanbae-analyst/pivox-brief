@@ -1,0 +1,83 @@
+{
+  "AMD": {
+    "ticker": "AMD",
+    "call_date": "2026-05-06",
+    "date_before": "2026-05-05",
+    "close_before": 355.26,
+    "date_after": "2026-05-07",
+    "close_after": 408.46,
+    "event_return_pct": 14.97
+  },
+  "AMZN": {
+    "ticker": "AMZN",
+    "call_date": "2026-04-29",
+    "date_before": "2026-04-28",
+    "close_before": 259.7,
+    "date_after": "2026-04-30",
+    "close_after": 265.06,
+    "event_return_pct": 2.06
+  },
+  "GOOGL": {
+    "ticker": "GOOGL",
+    "call_date": "2026-04-29",
+    "date_before": "2026-04-28",
+    "close_before": 349.57,
+    "date_after": "2026-04-30",
+    "close_after": 384.57,
+    "event_return_pct": 10.01
+  },
+  "JPM": {
+    "ticker": "JPM",
+    "call_date": "2026-04-14",
+    "date_before": "2026-04-13",
+    "close_before": 313.68,
+    "date_after": "2026-04-15",
+    "close_after": 305.93,
+    "event_return_pct": -2.47
+  },
+  "MSFT": {
+    "ticker": "MSFT",
+    "call_date": "2026-04-29",
+    "date_before": "2026-04-28",
+    "close_before": 428.32,
+    "date_after": "2026-04-30",
+    "close_after": 406.9,
+    "event_return_pct": -5.0
+  },
+  "NVDA": {
+    "ticker": "NVDA",
+    "call_date": "2026-05-20",
+    "date_before": "2026-05-19",
+    "close_before": 220.35,
+    "date_after": "2026-05-21",
+    "close_after": 219.25,
+    "event_return_pct": -0.5
+  },
+  "UNH": {
+    "ticker": "UNH",
+    "call_date": "2026-04-21",
+    "date_before": "2026-04-20",
+    "close_before": 321.64,
+    "date_after": "2026-04-22",
+    "close_after": 351.51,
+    "event_return_pct": 9.29
+  },
+  "WMT": {
+    "ticker": "WMT",
+    "call_date": "2026-05-21",
+    "date_before": "2026-05-20",
+    "close_before": 130.85,
+    "date_after": "2026-05-22",
+    "close_after": 120.27,
+    "event_return_pct": -8.09
+  },
+  "XOM": {
+    "ticker": "XOM",
+    "call_date": "2026-05-01",
+    "date_before": "2026-04-30",
+    "close_before": 153.29,
+    "date_after": "2026-05-04",
+    "close_after": 152.65,
+    "event_return_pct": -0.41
+  }
+}
