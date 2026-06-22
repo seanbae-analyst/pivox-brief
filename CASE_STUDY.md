@@ -88,7 +88,25 @@ The routing column is the deliverable, not a side effect:
 
 The system answered §1's real question: it knew which records to doubt.
 
-## 7. Cost: $0
+## 7. Does the signal carry market information? (stock-price layer)
+A standardizer is only useful if its signals *mean* something — so I tested them against
+what the market actually did. An **event study**, not a trading strategy (still §10:
+descriptive, no recommendations).
+
+For each call I measured the **earnings-day reaction** (close just before → close just
+after — a 2-trading-day bracket, robust to report timing) from free daily prices, then
+grouped by signal *lean* (guidance + tone).
+
+- **L1 — information content.** Positive-lean calls (raised / confident) averaged **+3.3%**
+  on the day; neutral calls **−1.4%** (n=9). Small sample, but the signal points the right
+  way on average.
+- **L2 — signal ↔ market divergences** (the interesting misses): **WMT** (labeled
+  *maintained / confident*; stock **−8.1%**) and **MSFT** (*raised / confident*; **−5.0%**).
+  These aren't extraction errors — the objective fields were right — they're cases where the
+  market priced something the headline tone didn't. It extends §6: *even a confident-sounding
+  call can disappoint*, and the divergence itself is worth surfacing.
+
+## 8. Cost: $0
 | Component | Production target (§8) | This build | Cost |
 |---|---|---|---|
 | Storage | Supabase | repo-local JSON | $0 |
@@ -103,7 +121,7 @@ caching and the Batch API — and typically covered by Anthropic free credits. I
 incurred here**: `engine/extract.py` is the ready-to-run API path; the portfolio sample was run
 through Claude Code at zero marginal cost.
 
-## 8. Limitations (honest)
+## 9. Limitations (honest)
 - **n = 9** — better, but still *illustrative, not statistical*. The harness is the deliverable; N grows.
 - **Single-annotator goldset** — I labeled both the extractions and the truth. Themes accuracy is
   therefore *intra-annotator consistency*; NVDA's 0.80 reflects my own two reads diverging
@@ -111,14 +129,17 @@ through Claude Code at zero marginal cost.
 - **8 of 9 transcripts are condensed captures** (WebFetch summarized long pages), so objective
   extraction was easier than full messy text. Only NVDA used a near-verbatim transcript.
 - **TSLA deferred** — no free full transcript was readily fetchable.
+- **Market layer is descriptive (n=9).** An event study, not a backtest or trading signal;
+  the earnings-day window is coarse (2 trading days) and 9 calls is illustrative, not powered.
 
-## 9. Roadmap
+## 10. Roadmap
 1. Scale further (now 9 → 20–40) → calibration becomes statistically meaningful.
 2. Independent themes labeling (remove the intra-annotator caveat).
 3. Schema v1 — percent/per-share metric type (margins, EPS) + metric-name normalization.
 4. Full verbatim transcripts for the whole set.
 5. Run a sample through the API → real $ figure + Haiku-vs-Opus accuracy delta.
 6. Static two-view dashboard (system performance / earnings intelligence) on GitHub Pages.
+7. Forward-return / PEAD study (L3) — heavily caveated as research, never a trading strategy.
 
 ---
 ### Reproduce

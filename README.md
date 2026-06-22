@@ -17,9 +17,11 @@ This is a **data-standardization / intelligence tool, not an investment-signal t
 (PROJECT.md §10).
 
 ## Status
-**Phases 0–6 covered** (schema · extraction · confidence routing · eval harness · dashboard · case study)
-on a 9-company watchlist (tech + bank/retail/energy/healthcare), built for **$0**. Latest eval (n=9):
-guidance / tone / metrics 100%, themes F1 ~0.95. Phase plan: PROJECT.md §9; results: [CASE_STUDY.md](CASE_STUDY.md).
+**Phases 0–6 + a stock-price layer** (schema · extraction · confidence routing · eval · dashboard ·
+case study · earnings-day market-reaction study) on a 9-company watchlist (tech + bank/retail/energy/
+healthcare), built for **$0**. Latest eval (n=9): guidance / tone / metrics 100%, themes F1 ~0.95;
+positive-lean calls averaged +3.3% on the day vs −1.4% neutral (signal has directional information).
+Results: [CASE_STUDY.md](CASE_STUDY.md).
 
 ## Layout
 ```
