@@ -1,18 +1,19 @@
-"""Build a one-page research pack for a US ticker / company name (step 5).
+"""Build a one-page research pack for a ticker / company name (steps 5 + KR routing).
 
     python scripts/research.py NVDA
     python scripts/research.py "advanced micro devices"
-    python scripts/research.py AAPL --save        # also writes data/output/AAPL.research.md
+    python scripts/research.py 삼성전자 --save        # KR via DART (needs DART_API_KEY)
 
-US issuers resolve via SEC EDGAR (keyless; set EDGAR_USER_AGENT in .env to declare
-identity). KR issuers route to the DART path (engine/dart.py) once DART_API_KEY is
-set — not yet wired here.
+US issuers resolve via SEC EDGAR (keyless; set EDGAR_USER_AGENT in .env). If the
+query doesn't resolve in EDGAR, it routes to the Korean path via Open DART
+(engine/dart.py), which needs a free DART_API_KEY in .env — KR stock in Korean.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -23,26 +24,35 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="One-page research pack (US / SEC EDGAR).")
-    ap.add_argument("query", help="ticker or company name, e.g. NVDA or 'nvidia'")
+    ap = argparse.ArgumentParser(description="One-page research pack (US/EDGAR, KR/DART).")
+    ap.add_argument("query", help="ticker or company name, e.g. NVDA, 'nvidia', or 삼성전자")
     ap.add_argument("--no-price", action="store_true", help="skip the demo price snapshot (no yfinance call)")
     ap.add_argument("--save", action="store_true", help="write data/output/<TICKER>.research.md")
     args = ap.parse_args(argv)
 
-    pack = build_us_pack(args.query, with_price=not args.no_price)
-    if pack is None:
-        print(
-            f"'{args.query}' did not resolve in SEC EDGAR (US issuers). "
-            "KR issuers need the DART path (set DART_API_KEY) — not yet wired.",
-            file=sys.stderr,
-        )
-        return 2
+    us = build_us_pack(args.query, with_price=not args.no_price)
+    if us is not None:
+        md = render_markdown(us)
+        ticker = us.profile.tickers[0] if us.profile.tickers else args.query.upper()
+    else:
+        # Korean path (Open DART). Needs DART_API_KEY; latest completed FY.
+        try:
+            from engine.research_pack_kr import build_kr_pack, render_markdown_kr
 
-    md = render_markdown(pack)
+            kr = build_kr_pack(args.query, year=date.today().year - 1)
+        except RuntimeError as exc:   # DART_API_KEY not set
+            print(f"'{args.query}' is not a US (EDGAR) issuer, and the KR (DART) path needs a key.\n  {exc}",
+                  file=sys.stderr)
+            return 2
+        if kr is None:
+            print(f"'{args.query}' did not resolve in SEC EDGAR (US) or Open DART (KR).", file=sys.stderr)
+            return 2
+        md = render_markdown_kr(kr)
+        ticker = kr.profile.stock_code or args.query.upper()
+
     print(md)
 
     if args.save:
-        ticker = pack.profile.tickers[0] if pack.profile.tickers else args.query.upper()
         out = ROOT / "data" / "output" / f"{ticker}.research.md"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(md + "\n", encoding="utf-8")
