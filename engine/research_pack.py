@@ -44,6 +44,7 @@ class ResearchPack:
     trend: list[QuarterRow] = field(default_factory=list)
     filings: list[Filing] = field(default_factory=list)
     price: Optional[object] = None      # engine.prices.LatestClose | None (demo-labeled)
+    news: list = field(default_factory=list)   # engine.news.NewsItem (link-only, §4)
     sources: list[str] = field(default_factory=list)
 
 
@@ -173,6 +174,8 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True) -> O
         except Exception:
             price = None  # gray/optional source — never block the pack on it
 
+    from engine.news import load_news
+
     sources = [
         f"SEC EDGAR — submissions: https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={profile.cik}&type=&dateb=&owner=include&count=40",
         f"SEC EDGAR XBRL company facts: https://data.sec.gov/api/xbrl/companyfacts/CIK{profile.cik}.json",
@@ -184,6 +187,7 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True) -> O
         trend=trend,
         filings=filings,
         price=price,
+        news=load_news(ref.ticker),
         sources=sources,
     )
 
@@ -273,9 +277,16 @@ def render_markdown(pack: ResearchPack) -> str:
         lines.append("_No recent filings on file._")
     lines.append("")
 
-    # News & catalysts (link-only, populated at the CLI layer)
+    # News & catalysts — headline + link only (§4); no article text reproduced
     lines.append("## News & catalysts")
-    lines.append("_Headline + link only (DATA_SOURCES.md §4) — populate via search; no article text reproduced._")
+    if pack.news:
+        for n in pack.news:
+            meta = " · ".join(x for x in (n.source, n.date) if x)
+            lines.append(f"- [{n.headline}]({n.url})" + (f" — {meta}" if meta else ""))
+        lines.append("")
+        lines.append("_Headlines + links only (DATA_SOURCES.md §4); no article text reproduced._")
+    else:
+        lines.append("_No cached headlines — populate `data/news/<TICKER>.json` (headline + link only, §4)._")
     lines.append("")
 
     # Sources + disclaimer
