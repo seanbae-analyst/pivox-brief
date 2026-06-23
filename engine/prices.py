@@ -13,6 +13,40 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import Optional
+
+
+@dataclass
+class LatestClose:
+    ticker: str
+    date: str
+    close: float
+
+
+def latest_close(ticker: str, lookback_days: int = 10) -> Optional[LatestClose]:
+    """Most recent daily close (demo-labeled, isolated — DATA_SOURCES.md §5).
+
+    yfinance is ToS-gray and used here for a personal/demo snapshot only; a public
+    or commercial build must swap in a licensed feed. None if data is unavailable.
+    """
+    import warnings
+
+    warnings.filterwarnings("ignore")
+    import yfinance as yf
+
+    end = date.today() + timedelta(days=1)
+    start = end - timedelta(days=lookback_days)
+    df = yf.download(ticker, start=start.isoformat(), end=end.isoformat(),
+                     progress=False, auto_adjust=True)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    closes = df["Close"]
+    if hasattr(closes, "columns"):
+        closes = closes[ticker] if ticker in closes.columns else closes.squeeze()
+    closes = closes.dropna()
+    if closes.empty:
+        return None
+    return LatestClose(ticker, closes.index[-1].date().isoformat(), round(float(closes.iloc[-1]), 2))
 
 
 @dataclass
