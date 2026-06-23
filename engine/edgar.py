@@ -1,0 +1,314 @@
+"""SEC EDGAR client — keyless US issuer data (RESEARCH_PACK_PLAN.md step 1).
+
+Official US government disclosure system (https://www.sec.gov). Free programmatic
+access under SEC's fair-access policy: a declared ``User-Agent`` (set
+``EDGAR_USER_AGENT`` with contact info) and <= 10 requests/second. Three keyless
+endpoints back the US research pack:
+
+  ticker -> CIK     www.sec.gov/files/company_tickers.json
+  recent filings    data.sec.gov/submissions/CIK##########.json
+  XBRL financials   data.sec.gov/api/xbrl/companyconcept/CIK.../us-gaap/<tag>.json
+
+Cleanest US source (DATA_SOURCES.md): a government disclosure system, no
+redistribution of third-party text — we keep only derived facts + provenance
+links. I/O (``_get``) is deliberately split from parsing (``parse_*``/``match_*``)
+so the parsers are pure and unit-tested offline against captured fixtures; nothing
+in the test suite touches the network.
+"""
+
+from __future__ import annotations
+
+import os
+import time
+from dataclasses import dataclass
+from datetime import date
+from typing import Optional
+
+import requests
+
+SEC_WWW = "https://www.sec.gov"
+SEC_DATA = "https://data.sec.gov"
+
+# SEC ceiling is 10 req/s; keep a margin. Module-level throttle shared by all _get.
+_MIN_INTERVAL = 0.12
+_last_request_at = 0.0
+
+# Revenue is tagged differently across issuers/eras — try in order, take the first
+# that returns data. The rest are single-tag in current us-gaap.
+REVENUE_CONCEPTS = (
+    "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "Revenues",
+    "SalesRevenueNet",
+)
+GROSS_PROFIT_CONCEPTS = ("GrossProfit",)
+OPERATING_INCOME_CONCEPTS = ("OperatingIncomeLoss",)
+NET_INCOME_CONCEPTS = ("NetIncomeLoss",)
+EPS_DILUTED_CONCEPTS = ("EarningsPerShareDiluted",)
+
+
+# ── data shapes ──────────────────────────────────────────────────────────────
+@dataclass
+class CompanyRef:
+    cik: str        # 10-digit zero-padded, e.g. "0000320193"
+    ticker: str
+    title: str
+
+
+@dataclass
+class CompanyProfile:
+    cik: str
+    name: str
+    tickers: list[str]
+    exchanges: list[str]
+    sic_description: str
+
+
+@dataclass
+class Filing:
+    form: str
+    filing_date: str
+    report_date: str
+    accession: str
+    primary_document: str
+    url: str          # direct link to the primary document (provenance)
+
+
+@dataclass
+class FactPoint:
+    end: str
+    val: float
+    fy: Optional[int]
+    fp: Optional[str]
+    form: str
+    frame: Optional[str]
+    start: Optional[str] = None
+
+
+@dataclass
+class FinancialSeries:
+    concept: str             # the us-gaap tag that resolved
+    points: list[FactPoint]
+
+
+# ── HTTP (rate-limited, identified) ──────────────────────────────────────────
+def _user_agent() -> str:
+    """SEC fair-access requires a declared identity. Set EDGAR_USER_AGENT to your
+    own contact (e.g. "yourname you@example.com") in .env — see DATA_SOURCES.md."""
+    return os.environ.get("EDGAR_USER_AGENT") or "pivox-brief/0.1 (research tool; set EDGAR_USER_AGENT)"
+
+
+def _throttle() -> None:
+    global _last_request_at
+    wait = _MIN_INTERVAL - (time.monotonic() - _last_request_at)
+    if wait > 0:
+        time.sleep(wait)
+    _last_request_at = time.monotonic()
+
+
+def _get(url: str) -> dict:
+    _throttle()
+    resp = requests.get(
+        url,
+        headers={"User-Agent": _user_agent(), "Accept-Encoding": "gzip, deflate"},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _cik10(cik: int | str) -> str:
+    """Normalize 320193 / "320193" / "CIK0000320193" -> "0000320193"."""
+    digits = str(cik).upper().replace("CIK", "").strip()
+    return str(int(digits)).zfill(10)
+
+
+# ── pure parsers ─────────────────────────────────────────────────────────────
+def parse_company_tickers(data: dict) -> dict[str, CompanyRef]:
+    """{"0": {cik_str, ticker, title}, ...} -> {TICKER: CompanyRef}."""
+    out: dict[str, CompanyRef] = {}
+    for row in data.values():
+        ref = CompanyRef(
+            cik=str(row["cik_str"]).zfill(10),
+            ticker=str(row["ticker"]).upper(),
+            title=str(row["title"]),
+        )
+        out[ref.ticker] = ref
+    return out
+
+
+def match_company(table: dict[str, CompanyRef], query: str) -> Optional[CompanyRef]:
+    """Exact ticker match first, then case-insensitive name substring."""
+    q = query.strip().upper()
+    if not q:
+        return None
+    if q in table:
+        return table[q]
+    for ref in table.values():
+        if q in ref.title.upper():
+            return ref
+    return None
+
+
+def parse_submissions(
+    data: dict,
+    forms: Optional[tuple[str, ...]] = None,
+    limit: int = 10,
+) -> tuple[CompanyProfile, list[Filing]]:
+    """submissions JSON -> (profile, filings). ``forms`` filters by exact form type."""
+    profile = CompanyProfile(
+        cik=_cik10(data["cik"]),
+        name=data.get("name", ""),
+        tickers=list(data.get("tickers", [])),
+        exchanges=list(data.get("exchanges", [])),
+        sic_description=data.get("sicDescription", ""),
+    )
+    recent = data.get("filings", {}).get("recent", {})
+    cik_int = int(profile.cik)
+    filings: list[Filing] = []
+    for i in range(len(recent.get("form", []))):
+        form = recent["form"][i]
+        if forms and form not in forms:
+            continue
+        accn = recent["accessionNumber"][i]
+        doc = recent["primaryDocument"][i]
+        folder = accn.replace("-", "")
+        base = f"{SEC_WWW}/Archives/edgar/data/{cik_int}/{folder}"
+        url = f"{base}/{doc}" if doc else f"{base}/"
+        filings.append(
+            Filing(
+                form=form,
+                filing_date=recent["filingDate"][i],
+                report_date=recent["reportDate"][i],
+                accession=accn,
+                primary_document=doc,
+                url=url,
+            )
+        )
+        if len(filings) >= limit:
+            break
+    return profile, filings
+
+
+def _pick_unit(units: dict) -> list[dict]:
+    """Most XBRL financials are USD; per-share figures (EPS) are USD/shares."""
+    for key in ("USD", "USD/shares"):
+        if key in units:
+            return units[key]
+    return next(iter(units.values()), [])
+
+
+def parse_concept(data: dict, n_quarters: int = 4) -> list[FactPoint]:
+    """Last ``n_quarters`` quarterly data points from a companyconcept response.
+
+    A quarter is identified by DURATION — a ~90-day ``start``->``end`` span. That is
+    the reliable signal across issuers: SEC's calendar ``frame`` tags are sparse and
+    sometimes stale (companies with non-calendar fiscal years, e.g. NVDA, leave
+    recent quarters un-framed), so frame is kept only as a display hint. Duration
+    naturally excludes year-to-date (6/9-month) and annual (10-K, ~365-day) rows;
+    restatements that share a period end are deduped, keeping the most recently
+    filed. ``companyconcept`` returns one consolidated value per period (no segment
+    breakdowns), so dedup-by-end is safe.
+    """
+    rows = _pick_unit(data.get("units", {}))
+
+    quarterly = []
+    for r in rows:
+        start, end = r.get("start"), r.get("end")
+        if not (start and end):
+            continue
+        try:
+            span = (date.fromisoformat(end) - date.fromisoformat(start)).days
+        except ValueError:
+            continue
+        if 80 <= span <= 100:
+            quarterly.append(r)
+
+    # Dedupe by period end, keeping the most-recently-filed (restatement-safe).
+    by_end: dict[str, dict] = {}
+    for r in sorted(quarterly, key=lambda x: str(x.get("filed", ""))):
+        by_end[r["end"]] = r
+
+    points = [
+        FactPoint(
+            end=r["end"],
+            val=float(r["val"]),
+            fy=r.get("fy"),
+            fp=r.get("fp"),
+            form=str(r.get("form", "")),
+            frame=r.get("frame"),
+            start=r.get("start"),
+        )
+        for r in sorted(by_end.values(), key=lambda x: x["end"])
+    ]
+    return points[-n_quarters:]
+
+
+# ── I/O wrappers (fetch + parse) ─────────────────────────────────────────────
+def resolve_ticker(query: str) -> Optional[CompanyRef]:
+    """Resolve a ticker (exact) or company name (substring) to a CompanyRef."""
+    table = parse_company_tickers(_get(f"{SEC_WWW}/files/company_tickers.json"))
+    return match_company(table, query)
+
+
+def company_filings(
+    cik: int | str,
+    forms: tuple[str, ...] = ("8-K", "10-Q", "10-K"),
+    limit: int = 10,
+) -> tuple[CompanyProfile, list[Filing]]:
+    data = _get(f"{SEC_DATA}/submissions/CIK{_cik10(cik)}.json")
+    return parse_submissions(data, forms=forms, limit=limit)
+
+
+def concept_points(cik: int | str, concept: str, n_quarters: int = 4) -> list[FactPoint]:
+    """One us-gaap concept's recent quarterly points. [] if the tag isn't filed (404)."""
+    url = f"{SEC_DATA}/api/xbrl/companyconcept/CIK{_cik10(cik)}/us-gaap/{concept}.json"
+    try:
+        data = _get(url)
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            return []
+        raise
+    return parse_concept(data, n_quarters)
+
+
+def best_series(
+    cik: int | str,
+    concepts: tuple[str, ...],
+    n_quarters: int = 4,
+) -> Optional[FinancialSeries]:
+    """The candidate concept with the MOST RECENT data.
+
+    Not merely the first that returns rows — issuers migrate tags and leave the old
+    one frozen (e.g. NVDA's ``RevenueFromContractWithCustomerExcludingAssessedTax``
+    stops in 2020; current revenue is under ``Revenues``). Picking by latest period
+    end follows the live tag.
+    """
+    best: Optional[FinancialSeries] = None
+    best_end = ""
+    for concept in concepts:
+        points = concept_points(cik, concept, n_quarters)
+        if points and points[-1].end > best_end:
+            best = FinancialSeries(concept=concept, points=points)
+            best_end = points[-1].end
+    return best
+
+
+def financials(cik: int | str, n_quarters: int = 4) -> dict[str, FinancialSeries]:
+    """The standard research-pack financial series (revenue/margins inputs/EPS).
+
+    Returns only the series that resolved — callers derive margins (gross/operating/
+    net = the income line / revenue) and render whatever is present.
+    """
+    wanted = {
+        "revenue": REVENUE_CONCEPTS,
+        "gross_profit": GROSS_PROFIT_CONCEPTS,
+        "operating_income": OPERATING_INCOME_CONCEPTS,
+        "net_income": NET_INCOME_CONCEPTS,
+        "eps_diluted": EPS_DILUTED_CONCEPTS,
+    }
+    out: dict[str, FinancialSeries] = {}
+    for key, concepts in wanted.items():
+        series = best_series(cik, concepts, n_quarters)
+        if series:
+            out[key] = series
+    return out
