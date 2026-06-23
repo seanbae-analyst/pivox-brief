@@ -25,6 +25,7 @@ import os
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
+from datetime import date, timedelta
 from typing import Optional
 
 import requests
@@ -231,10 +232,17 @@ def company_profile(corp_code: str) -> Optional[DartProfile]:
     return parse_company(_get_json("company.json", corp_code=corp_code))
 
 
-def disclosures(corp_code: str, limit: int = 10, bgn_de: Optional[str] = None) -> list[Disclosure]:
-    params = {"corp_code": corp_code, "page_count": str(limit)}
-    if bgn_de:
-        params["bgn_de"] = bgn_de
+def disclosures(corp_code: str, limit: int = 10, bgn_de: Optional[str] = None,
+                pblntf_ty: Optional[str] = "A") -> list[Disclosure]:
+    """Recent disclosures. DART's list.json REQUIRES a begin date — without bgn_de it
+    returns status 013 ("no data") — so default to ~18 months back. ``pblntf_ty='A'``
+    keeps only periodic reports (사업/반기/분기보고서), the KR earnings-read equivalent;
+    pass ``pblntf_ty=None`` for all disclosure types."""
+    if bgn_de is None:
+        bgn_de = (date.today() - timedelta(days=550)).strftime("%Y%m%d")
+    params = {"corp_code": corp_code, "page_count": str(limit), "bgn_de": bgn_de}
+    if pblntf_ty:
+        params["pblntf_ty"] = pblntf_ty
     return parse_disclosures(_get_json("list.json", **params), limit=limit)
 
 

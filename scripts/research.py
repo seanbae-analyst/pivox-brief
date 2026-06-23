@@ -18,12 +18,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dotenv import load_dotenv  # noqa: E402
 from engine.research_pack import build_us_pack, render_markdown  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # EDGAR_USER_AGENT / DART_API_KEY from .env
     ap = argparse.ArgumentParser(description="One-page research pack (US/EDGAR, KR/DART).")
     ap.add_argument("query", help="ticker or company name, e.g. NVDA, 'nvidia', or 삼성전자")
     ap.add_argument("--no-price", action="store_true", help="skip the demo price snapshot (no yfinance call)")

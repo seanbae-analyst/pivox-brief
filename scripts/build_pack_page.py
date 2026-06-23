@@ -16,8 +16,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dotenv import load_dotenv  # noqa: E402
 from engine import edgar  # noqa: E402
 from engine.research_pack import build_us_pack, earnings_read  # noqa: E402
+
+load_dotenv()  # EDGAR_USER_AGENT / DART_API_KEY from .env
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
