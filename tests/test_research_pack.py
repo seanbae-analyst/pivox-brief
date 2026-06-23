@@ -2,6 +2,7 @@
 Markdown renderer, exercised on synthetic EDGAR series (no network)."""
 
 from engine.edgar import CompanyProfile, FactPoint, Filing, FinancialSeries
+from engine.news import NewsItem
 from engine.research_pack import (
     ResearchPack,
     _language_for,
@@ -70,6 +71,7 @@ def test_render_markdown_has_sections_and_disclaimer():
         filings=[Filing("8-K", "2026-01-15", "2026-01-15", "0000000001-26-000001",
                         "acme-8k.htm", "https://www.sec.gov/Archives/edgar/data/1/x/acme-8k.htm",
                         items="2.02,9.01")],
+        news=[NewsItem("Acme lands big order", "https://news.example/x", "Reuters", "2026-06-20")],
         sources=["SEC EDGAR — https://www.sec.gov/"],
     )
     md = render_markdown(pack)
@@ -79,4 +81,5 @@ def test_render_markdown_has_sections_and_disclaimer():
     assert "acme-8k.htm" in md                 # filing provenance link present
     assert "Latest earnings release" in md     # 8-K Item 2.02 surfaced
     assert "Results of operations" in md        # decoded item label
+    assert "[Acme lands big order](https://news.example/x)" in md   # news, link-only
     assert "not investment advice" in md       # §10 disclaimer
