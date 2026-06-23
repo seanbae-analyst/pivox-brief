@@ -1,10 +1,11 @@
 """Build a self-contained stock-pack web page (RESEARCH_PACK_PLAN.md step 6).
 
-    EDGAR_USER_AGENT="you you@example.com" python scripts/build_pack_page.py NVDA AAPL AMD
+    python scripts/build_pack_page.py NVDA AAPL AMD 삼성전자 SK하이닉스
 
-Fetches each ticker's research pack from SEC EDGAR, inlines the data into a single
-docs/pack.html with a ticker selector. Static + self-contained — works opened
-locally and on GitHub Pages (no fetch/CORS), matching the project's $0 dashboard.
+Fetches each query's research pack — US via SEC EDGAR, KR via Open DART — and inlines
+the data into a single docs/pack.html with a ticker selector. Each pack renders in its
+own language (US → English, KR → Korean). Static + self-contained (no fetch/CORS),
+matching the project's $0 dashboard. Reads EDGAR_USER_AGENT / DART_API_KEY from .env.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import asdict, is_dataclass
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -48,20 +50,50 @@ def pack_to_dict(pack) -> dict:
     }
 
 
+def kr_pack_to_dict(pack) -> dict:
+    p = pack.profile
+    return {
+        "language": "ko",
+        "ticker": p.stock_code or pack.query,
+        "name": p.corp_name,
+        "name_eng": p.corp_name_eng,
+        "exchanges": ["KRX"],
+        "cik": p.corp_code,                      # DART 고유번호 (rendered as "DART …")
+        "price": None,
+        # normalize label -> period so the page renderer reads trends uniformly (US uses `period`)
+        "trend": [{"period": r.label, "revenue": r.revenue, "gross_margin": r.gross_margin,
+                   "operating_margin": r.operating_margin, "net_margin": r.net_margin,
+                   "revenue_yoy_pct": r.revenue_yoy_pct} for r in pack.trend],
+        "disclosures": [_d(d) for d in pack.disclosures],
+        "news": [_d(n) for n in pack.news],
+        "sources": pack.sources,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
     if not args:
-        print("usage: build_pack_page.py <TICKER> [TICKER ...]", file=sys.stderr)
+        print("usage: build_pack_page.py <TICKER|name> [...]", file=sys.stderr)
         return 2
+
+    from engine.research_pack_kr import build_kr_pack
 
     packs = []
     for query in args:
-        pack = build_us_pack(query)
-        if pack is None:
-            print(f"  skip: '{query}' did not resolve in EDGAR", file=sys.stderr)
-            continue
-        packs.append(pack_to_dict(pack))
-        print(f"  built {packs[-1]['ticker']}", file=sys.stderr)
+        us = build_us_pack(query)
+        if us is not None:
+            packs.append(pack_to_dict(us))
+        else:
+            try:
+                kr = build_kr_pack(query, year=date.today().year - 1)
+            except RuntimeError as exc:   # DART_API_KEY missing
+                print(f"  skip: '{query}' not in EDGAR and KR needs a key ({exc})", file=sys.stderr)
+                continue
+            if kr is None:
+                print(f"  skip: '{query}' did not resolve in EDGAR or DART", file=sys.stderr)
+                continue
+            packs.append(kr_pack_to_dict(kr))
+        print(f"  built {packs[-1]['ticker']} ({packs[-1]['language']})", file=sys.stderr)
 
     if not packs:
         print("no packs built", file=sys.stderr)
@@ -118,16 +150,17 @@ ul.list li:last-child{border:0}
 <body>
 <div class="wrap">
 <h1>Pivox Brief — Research Pack</h1>
-<p class="sub">One page of price-relevant factors from official SEC filings. A research starting point — not investment advice.</p>
+<p class="sub">One page of price-relevant factors from official filings — SEC EDGAR (US) &amp; Open DART (KR). A research starting point — not investment advice.</p>
 <div class="sel" id="sel"></div>
 <div id="pack"></div>
-<div class="foot">Financials &amp; filings: SEC EDGAR (XBRL), keyless. Prices: demo / illustrative only. News: headlines + links only. Built for $0. Descriptive analysis, not investment advice.</div>
+<div class="foot">US: SEC EDGAR (XBRL) · KR: Open DART · prices = demo only · news = headlines + links only · built for $0. Descriptive analysis, not investment advice / 투자자문이 아닙니다.</div>
 </div>
 <script>
 const DATA = __DATA__;
 const $=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 const usd=v=>{if(v==null)return '\\u2014';const a=Math.abs(v);if(a>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(a>=1e6)return '$'+(v/1e6).toFixed(0)+'M';return '$'+v.toLocaleString();};
 const pct=(v,s)=>v==null?'\\u2014':(s&&v>=0?'+':'')+v.toFixed(1)+'%';
+const won=v=>{if(v==null)return '\\u2014';const a=Math.abs(v);if(a>=1e12)return (v/1e12).toFixed(1)+'조원';if(a>=1e8)return Math.round(v/1e8)+'억원';return v.toLocaleString()+'원';};
 const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 function fileRow(f){
@@ -136,7 +169,9 @@ function fileRow(f){
   return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.primary_document||'filing')+'</a> \\u00b7 filed '+esc(f.filing_date)+lbl;
 }
 
-function render(p){
+function render(p){ return p.language==='ko' ? renderKO(p) : renderEN(p); }
+
+function renderEN(p){
   const box=document.getElementById('pack');box.innerHTML='';
   box.append($('h2','name',esc(p.name)+' <span style="color:var(--muted);font-weight:600">('+esc(p.ticker)+')</span>'));
   box.append($('p','meta',[p.exchanges.join(', '),esc(p.industry),'CIK '+esc(p.cik)].filter(Boolean).join(' \\u00b7 ')));
@@ -174,6 +209,38 @@ function render(p){
   box.append(nc);
 
   if((p.sources||[]).length){const card=$('div','card');card.append($('h3',null,'Sources'));const ul=$('ul','list');p.sources.forEach(s=>{const li=$('li');const m=String(s).match(/(https?:\\/\\/\\S+)/);li.innerHTML=m?esc(s.replace(m[1],''))+'<a href="'+esc(m[1])+'" target="_blank" rel="noopener">'+esc(m[1])+'</a>':esc(s);ul.append(li);});card.append(ul);box.append(card);}
+}
+
+function renderKO(p){
+  const box=document.getElementById('pack');box.innerHTML='';
+  box.append($('h2','name',esc(p.name)+' <span style="color:var(--muted);font-weight:600">('+esc(p.ticker)+')</span>'));
+  box.append($('p','meta',['KRX',esc(p.name_eng),'DART '+esc(p.cik)].filter(Boolean).join(' \\u00b7 ')));
+
+  const t=p.trend||[];const last=t[t.length-1];
+  const chips=$('div','chips');
+  if(last){
+    [['매출액',won(last.revenue)],['매출 성장(YoY)',pct(last.revenue_yoy_pct,true)],['영업이익률',pct(last.operating_margin)],['순이익률',pct(last.net_margin)]].forEach(([s,v])=>{const c=$('div','chip');c.append($('b',null,v),$('span',null,s+' \\u00b7 '+esc(last.period)));chips.append(c);});
+  }
+  box.append(chips);
+
+  if(t.length){
+    const card=$('div','card');card.append($('h3',null,'재무 추이 (연간, DART 정기보고서)'));
+    let h='<table><tr><th>기수</th><th class="num">매출액</th><th class="num">매출 성장</th><th class="num">매출총이익률</th><th class="num">영업이익률</th><th class="num">순이익률</th></tr>';
+    t.forEach(r=>{const y=r.revenue_yoy_pct;h+='<tr><td>'+esc(r.period)+'</td><td class="num">'+won(r.revenue)+'</td><td class="num '+(y==null?'':y>=0?'up':'down')+'">'+pct(y,true)+'</td><td class="num">'+pct(r.gross_margin)+'</td><td class="num">'+pct(r.operating_margin)+'</td><td class="num">'+pct(r.net_margin)+'</td></tr>';});
+    h+='</table>';card.innerHTML+=h;box.append(card);
+  }
+
+  if((p.disclosures||[]).length){
+    const card=$('div','card');card.append($('h3',null,'공시 (정기보고서)'));
+    const ul=$('ul','list');p.disclosures.forEach(d=>{const li=$('li');li.innerHTML='<a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.report_nm)+'</a> \\u00b7 접수 '+esc(d.rcept_dt)+(d.flr_nm?' \\u00b7 '+esc(d.flr_nm):'');ul.append(li);});card.append(ul);box.append(card);
+  }
+
+  const nc=$('div','card');nc.append($('h3',null,'뉴스 & 촉매 \\u2014 헤드라인 + 링크만'));
+  if((p.news||[]).length){const ul=$('ul','list');p.news.forEach(n=>{const meta=[n.source,n.date].filter(Boolean).join(' \\u00b7 ');const li=$('li');li.innerHTML='<a href="'+esc(n.url)+'" target="_blank" rel="noopener">'+esc(n.headline)+'</a>'+(meta?' <span class="tag">'+esc(meta)+'</span>':'');ul.append(li);});nc.append(ul);}
+  else nc.append($('p',null,'<span style="color:var(--muted)">캐시된 헤드라인 없음.</span>'));
+  box.append(nc);
+
+  if((p.sources||[]).length){const card=$('div','card');card.append($('h3',null,'출처'));const ul=$('ul','list');p.sources.forEach(s=>{const li=$('li');const m=String(s).match(/(https?:\\/\\/\\S+)/);li.innerHTML=m?esc(s.replace(m[1],''))+'<a href="'+esc(m[1])+'" target="_blank" rel="noopener">'+esc(m[1])+'</a>':esc(s);ul.append(li);});card.append(ul);box.append(card);}
 }
 
 function build(){
