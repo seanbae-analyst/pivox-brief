@@ -45,6 +45,36 @@ OPERATING_INCOME_CONCEPTS = ("OperatingIncomeLoss",)
 NET_INCOME_CONCEPTS = ("NetIncomeLoss",)
 EPS_DILUTED_CONCEPTS = ("EarningsPerShareDiluted",)
 
+# Form 8-K item codes -> human labels (common subset of SEC's item index). 2.02 is
+# the earnings release ("Results of Operations and Financial Condition").
+EIGHT_K_ITEMS = {
+    "1.01": "Material agreement",
+    "1.02": "Termination of material agreement",
+    "2.01": "Completed acquisition/disposition",
+    "2.02": "Results of operations",
+    "2.03": "Material financial obligation",
+    "2.05": "Costs from exit/disposal",
+    "3.01": "Delisting / listing-rule notice",
+    "3.02": "Unregistered equity sale",
+    "4.01": "Auditor change",
+    "5.02": "Officer / director change",
+    "5.03": "Bylaw / charter amendment",
+    "5.07": "Shareholder vote results",
+    "7.01": "Reg FD disclosure",
+    "8.01": "Other events",
+    "9.01": "Financial statements & exhibits",
+}
+EARNINGS_ITEM = "2.02"
+
+
+def decode_items(items: str) -> list[str]:
+    """"2.02,9.01" -> ["Results of operations", "Financial statements & exhibits"]."""
+    labels = []
+    for code in (c.strip() for c in (items or "").split(",")):
+        if code:
+            labels.append(EIGHT_K_ITEMS.get(code, f"Item {code}"))
+    return labels
+
 
 # ── data shapes ──────────────────────────────────────────────────────────────
 @dataclass
@@ -71,6 +101,7 @@ class Filing:
     accession: str
     primary_document: str
     url: str          # direct link to the primary document (provenance)
+    items: str = ""   # 8-K item codes, e.g. "2.02,9.01" (empty for other forms)
 
 
 @dataclass
@@ -163,6 +194,7 @@ def parse_submissions(
         sic_description=data.get("sicDescription", ""),
     )
     recent = data.get("filings", {}).get("recent", {})
+    items_arr = recent.get("items", [])
     cik_int = int(profile.cik)
     filings: list[Filing] = []
     for i in range(len(recent.get("form", []))):
@@ -182,6 +214,7 @@ def parse_submissions(
                 accession=accn,
                 primary_document=doc,
                 url=url,
+                items=items_arr[i] if i < len(items_arr) else "",
             )
         )
         if len(filings) >= limit:
