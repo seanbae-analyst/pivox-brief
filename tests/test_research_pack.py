@@ -68,7 +68,8 @@ def test_render_markdown_has_sections_and_disclaimer():
                                exchanges=["Nasdaq"], sic_description="Widgets"),
         trend=build_trend({"revenue": REV, "gross_profit": GP, "eps_diluted": EPS}),
         filings=[Filing("8-K", "2026-01-15", "2026-01-15", "0000000001-26-000001",
-                        "acme-8k.htm", "https://www.sec.gov/Archives/edgar/data/1/x/acme-8k.htm")],
+                        "acme-8k.htm", "https://www.sec.gov/Archives/edgar/data/1/x/acme-8k.htm",
+                        items="2.02,9.01")],
         sources=["SEC EDGAR — https://www.sec.gov/"],
     )
     md = render_markdown(pack)
@@ -76,4 +77,6 @@ def test_render_markdown_has_sections_and_disclaimer():
     assert "## Financial trend" in md
     assert "CY2025Q4" in md
     assert "acme-8k.htm" in md                 # filing provenance link present
+    assert "Latest earnings release" in md     # 8-K Item 2.02 surfaced
+    assert "Results of operations" in md        # decoded item label
     assert "not investment advice" in md       # §10 disclaimer

@@ -4,6 +4,7 @@ responses verified against the live API (RESEARCH_PACK_PLAN.md step 1). No netwo
 from engine.edgar import (
     CompanyRef,
     _cik10,
+    decode_items,
     financials,  # noqa: F401  (import smoke; exercised live, not here)
     match_company,
     parse_company_tickers,
@@ -29,8 +30,9 @@ SUBMISSIONS = {
             "accessionNumber": ["0001140361-26-025622", "0000320193-26-000060", "0001140361-26-023149"],
             "filingDate": ["2026-06-17", "2026-05-01", "2026-05-28"],
             "reportDate": ["2026-06-15", "2026-03-28", ""],
-            "form": ["4", "10-Q", "SD"],
-            "primaryDocument": ["xslF345X06/form4.xml", "aapl-20260328.htm", "ef20073373_sd.htm"],
+            "form": ["8-K", "10-Q", "SD"],
+            "items": ["2.02,9.01", "", ""],
+            "primaryDocument": ["nvda-8k.htm", "aapl-20260328.htm", "ef20073373_sd.htm"],
         }
     },
 }
@@ -112,6 +114,19 @@ def test_parse_submissions_profile_and_form_filter():
     f = filings[0]
     assert f.form == "10-Q" and f.report_date == "2026-03-28"
     assert f.url == "https://www.sec.gov/Archives/edgar/data/320193/000032019326000060/aapl-20260328.htm"
+
+
+def test_parse_submissions_carries_8k_items():
+    _, filings = parse_submissions(SUBMISSIONS, forms=("8-K",), limit=10)
+    assert len(filings) == 1
+    assert filings[0].items == "2.02,9.01"
+
+
+def test_decode_items():
+    assert decode_items("2.02,9.01") == ["Results of operations", "Financial statements & exhibits"]
+    assert decode_items("2.02") == ["Results of operations"]
+    assert decode_items("9.99") == ["Item 9.99"]   # unknown code passes through
+    assert decode_items("") == []
 
 
 def test_parse_concept_uses_duration_not_frame_and_dedupes():

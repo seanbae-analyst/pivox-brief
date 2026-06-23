@@ -125,6 +125,22 @@ def build_trend(fin: dict[str, FinancialSeries], last_n: int = 4) -> list[Quarte
     return rows
 
 
+def _latest(filings: list[Filing], predicate) -> Optional[Filing]:
+    """First match — submissions are most-recent-first, so this is the latest."""
+    return next((f for f in filings if predicate(f)), None)
+
+
+def earnings_read(filings: list[Filing]) -> dict[str, Optional[Filing]]:
+    """The three filings a reader reaches for: the latest earnings release (8-K
+    carrying Item 2.02), the latest 10-Q (MD&A + financials), and the latest 10-K
+    (whose Item 1A is the risk-factors section)."""
+    return {
+        "earnings_8k": _latest(filings, lambda f: f.form == "8-K" and edgar.EARNINGS_ITEM in (f.items or "")),
+        "latest_10q": _latest(filings, lambda f: f.form == "10-Q"),
+        "latest_10k": _latest(filings, lambda f: f.form == "10-K"),
+    }
+
+
 def _language_for(exchanges: list[str]) -> str:
     """US exchanges -> English. KR exchanges (KRX/KOSPI/KOSDAQ) -> Korean (DART path)."""
     blob = " ".join(exchanges).upper()
@@ -225,14 +241,36 @@ def render_markdown(pack: ResearchPack) -> str:
         lines.append("_No standardized XBRL financials available for this issuer._")
     lines.append("")
 
-    # Earnings read / recent filings
-    lines.append("## Recent filings (earnings read)")
+    # Earnings read — the filings a reader reaches for first
+    lines.append("## Earnings read")
+    read = earnings_read(pack.filings)
+    if read["earnings_8k"]:
+        f = read["earnings_8k"]
+        lines.append(f"- **Latest earnings release** — 8-K, Results of operations · filed {f.filing_date} — [{f.primary_document or 'filing'}]({f.url})")
+    if read["latest_10q"]:
+        f = read["latest_10q"]
+        lines.append(f"- **Latest 10-Q** — MD&A + financials · filed {f.filing_date} — [{f.primary_document or 'filing'}]({f.url})")
+    if read["latest_10k"]:
+        f = read["latest_10k"]
+        lines.append(f"- **Risk factors** — Item 1A, latest 10-K · filed {f.filing_date} — [{f.primary_document or 'filing'}]({f.url})")
+    if not any(read.values()):
+        lines.append("_No earnings 8-K / 10-Q / 10-K on file._")
+    lines.append("")
+
+    # Full recent-filing list, each labeled by what it covers (8-K item decode)
+    lines.append("### Recent filings")
     if pack.filings:
         for f in pack.filings:
-            tail = f" — period {f.report_date}" if f.report_date else ""
+            extras = []
+            if f.report_date:
+                extras.append(f"period {f.report_date}")
+            labels = edgar.decode_items(f.items)
+            if labels:
+                extras.append("; ".join(labels))
+            tail = f" — {' · '.join(extras)}" if extras else ""
             lines.append(f"- **{f.form}** · filed {f.filing_date}{tail} — [{f.primary_document or 'filing'}]({f.url})")
     else:
-        lines.append("_No recent 8-K/10-Q/10-K on file._")
+        lines.append("_No recent filings on file._")
     lines.append("")
 
     # News & catalysts (link-only, populated at the CLI layer)
