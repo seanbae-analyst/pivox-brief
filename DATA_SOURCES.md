@@ -35,6 +35,27 @@
 | **The Motley Fool** (transcripts) | current 9-company earnings read | ⚠️ copyrighted | Transcripts are copyrighted ("no reproduction"). We extract **facts only**; raw text gitignored. The clean research-pack path drops transcript dependence (uses EDGAR/DART filings). |
 | **WebSearch** | finding sources, headlines | ✅ low | Discovery + headline/link; no body reproduction. |
 | **FMP** | (optional) financials | licensed API | Use within their terms; redistribution per their license. |
+| **KRX investor flows** (외국인/기관 일별 순매매) | KR per-stock daily foreign / institutional net buy-sell | ⚠️ no clean API | See note below — the official KRX OPEN API does **not** expose investor-type flows; the only programmatic source is the gray `data.krx.co.kr` internal endpoint (what pykrx scrapes). Excluded by our posture pending a decision. |
+
+## KR investor flows (외국인 매도) — researched 2026-06-23, decision pending
+
+Korean per-stock daily investor-type net flows (foreign / institution / individual) are a
+high-signal price driver and are **published for on-screen viewing** at the KRX Data
+Marketplace. But there is **no clean, free, sanctioned programmatic API** for them:
+
+- **Official KRX OPEN API** (`openapi.krx.co.kr`, requires a free key) — covers indices,
+  stocks/ETF/bond/derivative **prices & trading**, but **has no investor-type flow endpoint**.
+- **`data.krx.co.kr` `getJsonData.cmd`** — the only endpoint that returns investor flows. It is
+  KRX's *undocumented internal* endpoint (exactly what **pykrx** scrapes), which this project
+  treats as **ToS-gray / excluded** (see pykrx note).
+- **공공데이터포털 (data.go.kr)** — KRX-sourced datasets are listing/price info, not per-stock
+  investor flows.
+
+**Decision for the operator** (do not auto-enable): (a) accept the gray `data.krx.co.kr` route
+for *personal/dev only*, behind an explicit default-OFF flag and never redistributed; (b) license
+a market-data vendor that carries KR flows; or (c) keep 외국인/기관 flow as a **documented 🟡 gap**
+in the coverage manifest (honest "we don't see this for free"). Until chosen, the KR pack names
+it as a blind spot rather than crossing the posture.
 
 ## What's in the repo
 - **Committed (derived/factual):** `EarningsSignal` JSON, goldset labels, `reactions.json`,

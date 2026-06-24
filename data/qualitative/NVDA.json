@@ -1,0 +1,83 @@
+{
+  "guidance": {
+    "direction": "not_given",
+    "detail": "10-Q MD&A does not restate forward revenue guidance; NVIDIA gives quarterly guidance in its earnings press release (8-K).",
+    "confidence": 0.5,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+  },
+  "tone": {
+    "label": "mixed",
+    "confidence": 0.6,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+  },
+  "themes": [
+    {
+      "theme": "demand_strength",
+      "direction": "positive",
+      "evidence": "Data Center revenue $75.2B, +92% YoY, on Blackwell 300 ramp and InfiniBand/Spectrum-X/NVLink demand.",
+      "confidence": 0.9,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "theme": "new_product_ramp",
+      "direction": "positive",
+      "evidence": "Blackwell 300 is the majority of system shipments; Rubin platform expected to start shipping in H2 FY2027.",
+      "confidence": 0.8,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "theme": "supply_constraint",
+      "direction": "negative",
+      "evidence": "Customer AI buildout depends on data-center, energy, and capital availability; multi-year energy expansion could delay deployments.",
+      "confidence": 0.7,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "theme": "regulatory_legal",
+      "direction": "negative",
+      "evidence": "China export controls: H200 licenses (Feb 2026) generated no revenue yet and carry a 25% US tariff; zero Data Center Hopper shipped to China vs $4.6B a year ago.",
+      "confidence": 0.85,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "theme": "competitive_pressure",
+      "direction": "negative",
+      "evidence": "Rise of high-quality open-source foundation models could reduce demand if deployed on competitors' platforms.",
+      "confidence": 0.6,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    },
+    {
+      "theme": "capex_investment",
+      "direction": "neutral",
+      "evidence": "Invested $18.6B in private companies and infrastructure funds in Q1 FY27 to cultivate the AI ecosystem (some indirectly buy NVIDIA).",
+      "confidence": 0.7,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm"
+    }
+  ],
+  "risk_factors": [
+    {
+      "summary": "Supply-demand mismatch: long manufacturing lead times and uncertain capacity, plus demand-estimation error, have caused and could cause imbalances.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    },
+    {
+      "summary": "Customer concentration: a significant share of revenue comes from a limited number of partners/distributors; losing access to any could hurt revenue.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    },
+    {
+      "summary": "Export restrictions: complex laws including export controls on NVIDIA products (e.g., China) may adversely affect the business.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    },
+    {
+      "summary": "Competition could adversely impact market share and financial results.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    },
+    {
+      "summary": "If operating results fall below analyst/investor expectations, the stock price could decline.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    }
+  ],
+  "sources": [
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000052/nvda-20260426.htm",
+    "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+  ]
+}
