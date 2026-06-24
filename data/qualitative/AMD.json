@@ -1,0 +1,83 @@
+{
+  "guidance": {
+    "direction": "not_given",
+    "detail": "10-Q MD&A gives no numeric forward guidance; AMD guides on its earnings call.",
+    "confidence": 0.5,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+  },
+  "tone": {
+    "label": "confident",
+    "confidence": 0.7,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+  },
+  "themes": [
+    {
+      "theme": "demand_strength",
+      "direction": "positive",
+      "evidence": "Q1 net revenue $10.3B, +38% YoY — Data Center (5th-gen EPYC + Instinct MI350 GPUs), Client/Gaming (Ryzen), Embedded.",
+      "confidence": 0.85,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    },
+    {
+      "theme": "margin_expansion",
+      "direction": "positive",
+      "evidence": "Gross margin 53%, up from 50% YoY, on favorable mix (more Data Center); operating income $1.5B vs $0.8B.",
+      "confidence": 0.8,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    },
+    {
+      "theme": "new_product_ramp",
+      "direction": "positive",
+      "evidence": "Instinct MI350 ramping; MI450 + 6th-gen EPYC central to new hyperscaler deals.",
+      "confidence": 0.75,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    },
+    {
+      "theme": "market_share_gain",
+      "direction": "positive",
+      "evidence": "Meta to deploy up to 6 GW of AMD GPUs (MI450 + EPYC); AMD issued Meta a warrant for up to 160M shares @ $0.01 vesting on purchase milestones + stock-price targets (dilutive).",
+      "confidence": 0.7,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    },
+    {
+      "theme": "regulatory_legal",
+      "direction": "negative",
+      "evidence": "US export restrictions on China constrain sales of advanced/AI products.",
+      "confidence": 0.6,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    },
+    {
+      "theme": "competitive_pressure",
+      "direction": "negative",
+      "evidence": "Markets are highly competitive and rapidly evolving (vs NVIDIA, Intel).",
+      "confidence": 0.6,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+    }
+  ],
+  "risk_factors": [
+    {
+      "summary": "Semiconductor industry is highly cyclical and has experienced severe downturns.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+    },
+    {
+      "summary": "Markets are highly competitive and rapidly evolving.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+    },
+    {
+      "summary": "Relies on third-party foundries to manufacture products; capacity/yield constraints could hurt results.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+    },
+    {
+      "summary": "Loss of a significant customer could materially hurt results.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+    },
+    {
+      "summary": "US export restrictions (China) on advanced/AI products.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm"
+    }
+  ],
+  "sources": [
+    "https://www.sec.gov/Archives/edgar/data/2488/000000248826000076/amd-20260328.htm",
+    "https://www.sec.gov/Archives/edgar/data/2488/000000248826000018/amd-20251227.htm"
+  ]
+}

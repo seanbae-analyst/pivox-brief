@@ -1,0 +1,65 @@
+{
+  "guidance": {
+    "direction": "not_given",
+    "detail": "10-Q MD&A gives no numeric forward guidance; Apple guides on its earnings call.",
+    "confidence": 0.5,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+  },
+  "tone": {
+    "label": "mixed",
+    "confidence": 0.6,
+    "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+  },
+  "themes": [
+    {
+      "theme": "demand_strength",
+      "direction": "positive",
+      "evidence": "Q2 net sales $111.2B, +17% YoY — iPhone +22% (Pro mix), Services +16%, Greater China +28%.",
+      "confidence": 0.85,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+    },
+    {
+      "theme": "new_product_ramp",
+      "direction": "positive",
+      "evidence": "Q2 launches: iPhone 17e, MacBook Pro/Air/Neo, iPad Air, AirPods Max 2.",
+      "confidence": 0.6,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+    },
+    {
+      "theme": "margin_pressure",
+      "direction": "negative",
+      "evidence": "Component supply-demand imbalance + rising costs (advanced semis, NAND, DRAM); Apple expects these to intensify and may adversely affect gross margin.",
+      "confidence": 0.8,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+    },
+    {
+      "theme": "regulatory_legal",
+      "direction": "negative",
+      "evidence": "New US tariffs (China/India/etc.) + Section 232 semiconductor probe; potential material adverse impact (SCOTUS struck some tariffs; refund applied for).",
+      "confidence": 0.7,
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+    }
+  ],
+  "risk_factors": [
+    {
+      "summary": "Majority of sales are international; adverse global/regional macro (inflation, rates, FX) can materially reduce demand.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm"
+    },
+    {
+      "summary": "Political events, trade and international disputes, geopolitical tensions and tariffs can disrupt the business.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm"
+    },
+    {
+      "summary": "Large, complex global supply chain concentrated outside the US.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm"
+    },
+    {
+      "summary": "Component supply-demand imbalance and rising costs (semis/NAND/DRAM) may pressure gross margin.",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm"
+    }
+  ],
+  "sources": [
+    "https://www.sec.gov/Archives/edgar/data/320193/000032019326000013/aapl-20260328.htm",
+    "https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm"
+  ]
+}
