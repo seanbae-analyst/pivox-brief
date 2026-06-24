@@ -50,6 +50,95 @@ def latest_close(ticker: str, lookback_days: int = 10) -> Optional[LatestClose]:
 
 
 @dataclass
+class Technicals:
+    """Demo-labeled price-action snapshot (DATA_SOURCES.md §5 — gray/personal only)."""
+
+    as_of: str
+    last_close: float
+    ret_1m_pct: Optional[float] = None
+    ret_ytd_pct: Optional[float] = None
+    ret_1y_pct: Optional[float] = None
+    high_52w: Optional[float] = None
+    low_52w: Optional[float] = None
+    pct_from_52w_high: Optional[float] = None
+    ma50: Optional[float] = None
+    ma200: Optional[float] = None
+
+
+def _close_series(ticker: str, lookback_days: int):
+    """Clean daily-close pandas Series (demo source), or None. Shared shape-handling
+    with latest_close: yfinance returns a multi-index frame for some tickers."""
+    import warnings
+
+    warnings.filterwarnings("ignore")
+    import yfinance as yf
+
+    end = date.today() + timedelta(days=1)
+    start = end - timedelta(days=lookback_days)
+    df = yf.download(ticker, start=start.isoformat(), end=end.isoformat(),
+                     progress=False, auto_adjust=True)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    closes = df["Close"]
+    if hasattr(closes, "columns"):
+        closes = closes[ticker] if ticker in closes.columns else closes.squeeze()
+    closes = closes.dropna()
+    return closes if not closes.empty else None
+
+
+def _ret_from(closes, days: int) -> Optional[float]:
+    """Pct return of the last close vs the close nearest `days` calendar days earlier."""
+    last_dt = closes.index[-1]
+    target = last_dt - timedelta(days=days)
+    prior = closes[closes.index <= target]
+    if prior.empty:
+        return None
+    return round((float(closes.iloc[-1]) / float(prior.iloc[-1]) - 1.0) * 100.0, 1)
+
+
+def technicals(ticker: str, lookback_days: int = 430) -> Optional[Technicals]:
+    """~14-month price-action snapshot: trailing returns, 52-week range, 50/200-day MAs.
+
+    Demo-labeled (yfinance, DATA_SOURCES.md §5); a public/commercial build swaps in a
+    licensed feed. None if price data is unavailable — never blocks the pack.
+    """
+    closes = _close_series(ticker, lookback_days)
+    if closes is None:
+        return None
+
+    last_close = round(float(closes.iloc[-1]), 2)
+    as_of = closes.index[-1].date().isoformat()
+
+    # 52-week window (~365 calendar days back from the latest close).
+    yr = closes[closes.index >= (closes.index[-1] - timedelta(days=365))]
+    high_52w = round(float(yr.max()), 2) if not yr.empty else None
+    low_52w = round(float(yr.min()), 2) if not yr.empty else None
+    pct_from_high = round((last_close / high_52w - 1.0) * 100.0, 1) if high_52w else None
+
+    # Year-to-date: first close on/after Jan 1 of the latest close's year.
+    jan1 = date(closes.index[-1].year, 1, 1)
+    ytd_slice = closes[[d.date() >= jan1 for d in closes.index]]
+    ret_ytd = (round((last_close / float(ytd_slice.iloc[0]) - 1.0) * 100.0, 1)
+               if not ytd_slice.empty else None)
+
+    ma50 = round(float(closes.iloc[-50:].mean()), 2) if len(closes) >= 50 else None
+    ma200 = round(float(closes.iloc[-200:].mean()), 2) if len(closes) >= 200 else None
+
+    return Technicals(
+        as_of=as_of,
+        last_close=last_close,
+        ret_1m_pct=_ret_from(closes, 30),
+        ret_ytd_pct=ret_ytd,
+        ret_1y_pct=_ret_from(closes, 365),
+        high_52w=high_52w,
+        low_52w=low_52w,
+        pct_from_52w_high=pct_from_high,
+        ma50=ma50,
+        ma200=ma200,
+    )
+
+
+@dataclass
 class Reaction:
     ticker: str
     call_date: str

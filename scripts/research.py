@@ -12,6 +12,7 @@ query doesn't resolve in EDGAR, it routes to the Korean path via Open DART
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -19,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv  # noqa: E402
-from engine.research_pack import build_us_pack, render_markdown  # noqa: E402
+from engine.research_pack import build_us_pack, render_markdown, to_record  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -30,12 +31,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("query", help="ticker or company name, e.g. NVDA, 'nvidia', or 삼성전자")
     ap.add_argument("--no-price", action="store_true", help="skip the demo price snapshot (no yfinance call)")
     ap.add_argument("--save", action="store_true", help="write data/output/<TICKER>.research.md")
+    ap.add_argument("--json", action="store_true", help="write data/output/<TICKER>.research.json (structured record; US path)")
     args = ap.parse_args(argv)
 
     us = build_us_pack(args.query, with_price=not args.no_price)
     if us is not None:
         md = render_markdown(us)
         ticker = us.profile.tickers[0] if us.profile.tickers else args.query.upper()
+        if args.json:
+            out = ROOT / "data" / "output" / f"{ticker}.research.json"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(to_record(us), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"[json] {out}", file=sys.stderr)
     else:
         # Korean path (Open DART). Needs DART_API_KEY; latest completed FY.
         try:

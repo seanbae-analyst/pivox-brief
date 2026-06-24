@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv  # noqa: E402
 from engine import edgar  # noqa: E402
-from engine.research_pack import build_us_pack, earnings_read  # noqa: E402
+from engine.research_pack import build_us_pack, coverage_manifest, earnings_read  # noqa: E402
 
 load_dotenv()  # EDGAR_USER_AGENT / DART_API_KEY from .env
 
@@ -46,6 +46,10 @@ def pack_to_dict(pack) -> dict:
         "earnings_read": {k: _d(v) for k, v in er.items()},
         "filings": [{**_d(f), "labels": edgar.decode_items(f.items)} for f in pack.filings],
         "news": [_d(n) for n in pack.news],
+        "quant": pack.quant,
+        "qualitative": pack.qualitative,
+        "ownership": pack.ownership,
+        "coverage": coverage_manifest(pack),
         "sources": pack.sources,
     }
 
@@ -145,6 +149,18 @@ ul.list li:last-child{border:0}
 .tag{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;margin-left:4px;color:#475569}
 .lead{border-left:3px solid var(--accent);padding-left:12px;margin:8px 0}
 .foot{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-size:15px;font-family:ui-monospace,Menlo,monospace}
+.stat span{color:var(--muted);font-size:11px}
+.priceline{margin-top:12px;font-size:12px;color:#334155;font-family:ui-monospace,Menlo,monospace;line-height:1.8}
+.conf{color:var(--muted);font-size:11px}
+.subh{font-weight:700;font-size:12px;margin:12px 0 4px}
+.fineprint{color:var(--muted);font-size:11px;margin-top:10px}
+.covrow{padding:7px 0;font-size:12px;border-bottom:1px solid var(--line);line-height:1.7}
+.covrow:last-child{border:0}
+.covlabel{font-weight:700;margin-right:6px;white-space:nowrap}
+.cov-ok{color:var(--up)}.cov-mid{color:#b45309}.cov-out{color:var(--down)}
 </style>
 </head>
 <body>
@@ -162,6 +178,80 @@ const usd=v=>{if(v==null)return '\\u2014';const a=Math.abs(v);if(a>=1e9)return '
 const pct=(v,s)=>v==null?'\\u2014':(s&&v>=0?'+':'')+v.toFixed(1)+'%';
 const won=v=>{if(v==null)return '\\u2014';const a=Math.abs(v);if(a>=1e12)return (v/1e12).toFixed(1)+'조원';if(a>=1e8)return Math.round(v/1e8)+'억원';return v.toLocaleString()+'원';};
 const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const conf=c=>c==null?'':' <span class="conf">conf '+c+'</span>';
+const mult=v=>v==null?'\\u2014':v+'\\u00d7';
+
+function valuationCard(p){
+  const q=p.quant; if(!q) return null;
+  const v=q.valuation||{},pr=q.profitability||{},h=q.health||{},c=q.capital_return||{},px=q.price||{};
+  const card=$('div','card');card.append($('h3',null,'Valuation & quality'));
+  const grid=$('div','statgrid');
+  const stat=(label,val)=>{const s=$('div','stat');s.append($('b',null,val),$('span',null,label));return s;};
+  const num=x=>x==null?'\\u2014':x;
+  [['Market cap',usd(v.market_cap)],['P/E (TTM)',mult(v.pe_ttm)],['P/S',mult(v.ps_ttm)],['P/B',mult(v.pb)],['EV/EBITDA',mult(v.ev_ebitda)],
+   ['FCF yield',pct(v.fcf_yield_pct)],['Div yield',pct(v.dividend_yield_pct)],['Buyback yield',pct(v.buyback_yield_pct)],['ROE',pct(pr.roe_pct)],
+   ['Gross margin',pct(pr.gross_margin_ttm_pct)],['Oper margin',pct(pr.operating_margin_ttm_pct)],['Net margin',pct(pr.net_margin_ttm_pct)],['FCF margin',pct(pr.fcf_margin_pct)],
+   ['Net debt',usd(h.net_debt)],['Debt/Equity',num(h.debt_to_equity)],['Current ratio',num(h.current_ratio)],['Shares YoY',pct(c.shares_yoy_pct,true)]
+  ].forEach(([l,val])=>grid.append(stat(l,val)));
+  card.append(grid);
+  if(px&&px.last_close!=null){
+    const pl=$('div','priceline');
+    pl.innerHTML='<b>Price \\u27e8demo\\u27e9</b> $'+px.last_close+' ('+esc(px.as_of)+') \\u00b7 1M '+pct(px.ret_1m_pct,true)+' \\u00b7 YTD '+pct(px.ret_ytd_pct,true)+' \\u00b7 1Y '+pct(px.ret_1y_pct,true)+' \\u00b7 52w $'+px.low_52w+'\\u2013$'+px.high_52w+' ('+pct(px.pct_from_52w_high,true)+' from high) \\u00b7 MA50 $'+px.ma50+' / MA200 $'+px.ma200;
+    card.append(pl);
+  }
+  return card;
+}
+
+function qualitativeCard(p){
+  const q=p.qualitative; if(!q||!((q.themes||[]).length||q.guidance||(q.risk_factors||[]).length)) return null;
+  const card=$('div','card');card.append($('h3',null,'Signal read \\u2014 qualitative (filings-derived)'));
+  if(q.guidance){const d=$('div','lead');d.innerHTML='<b>Guidance:</b> '+esc(q.guidance.direction)+(q.guidance.detail?' \\u2014 '+esc(q.guidance.detail):'')+conf(q.guidance.confidence);card.append(d);}
+  if(q.tone){const d=$('div');d.style.margin='8px 0';d.innerHTML='<b>Management tone:</b> '+esc(q.tone.label)+conf(q.tone.confidence);card.append(d);}
+  const ul=$('ul','list');
+  (q.themes||[]).forEach(t=>{
+    const ar=t.direction==='positive'?'<span class="up">\\u25b2</span>':t.direction==='negative'?'<span class="down">\\u25bc</span>':'\\u2022';
+    const src=t.source_url?' <a href="'+esc(t.source_url)+'" target="_blank" rel="noopener">src</a>':'';
+    const li=$('li');li.innerHTML=ar+' <b>'+esc(t.theme)+'</b> <span class="tag">'+esc(t.direction)+'</span> '+esc(t.evidence)+conf(t.confidence)+src;ul.append(li);
+  });
+  card.append(ul);
+  if((q.risk_factors||[]).length){
+    card.append($('div','subh','Key risk factors (10-K Item 1A)'));
+    const rl=$('ul','list');q.risk_factors.forEach(r=>{const li=$('li');li.innerHTML=esc(r.summary);rl.append(li);});card.append(rl);
+  }
+  card.append($('p','fineprint','Themes mapped to a fixed vocabulary; paraphrased from official filings (no verbatim text).'));
+  return card;
+}
+
+function ownershipCard(p){
+  const o=p.ownership; if(!o||!((o.insider_transactions||[]).length||(o.large_holder_filings||[]).length)) return null;
+  const card=$('div','card');card.append($('h3',null,'Insider & ownership activity'));
+  const ul=$('ul','list');
+  (o.insider_transactions||[]).forEach(t=>{
+    const star=t.discretionary?'<span class="up">\\u2605</span> ':'';
+    const sh=t.shares!=null?Number(t.shares).toLocaleString():'\\u2014';
+    const val=t.value!=null?' (~'+usd(t.value)+')':'';
+    const li=$('li');li.innerHTML=star+'<b>'+esc(t.owner)+'</b> <span class="tag">'+esc(t.relationship)+'</span> '+esc(t.code_label)+' '+esc(t.acquired_disposed)+' '+sh+' sh'+val+' \\u00b7 '+esc(t.date||'');ul.append(li);
+  });
+  card.append(ul);
+  if((o.large_holder_filings||[]).length){
+    const d=$('div');d.style.marginTop='8px';
+    d.innerHTML='<b>Large-holder filings (&gt;5%):</b> '+o.large_holder_filings.slice(0,4).map(f=>'<a href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.form)+' '+esc(f.filed)+'</a>').join(', ');
+    card.append(d);
+  }
+  card.append($('p','fineprint','\\u2605 = discretionary open-market trade (P/S); others are grants / tax / option / gift.'));
+  return card;
+}
+
+function coverageCard(p){
+  const c=p.coverage; if(!c) return null;
+  const card=$('div','card');card.append($('h3',null,'Coverage'));
+  const row=(label,items,cls)=>{const d=$('div','covrow');d.innerHTML='<span class="covlabel '+cls+'">'+label+'</span> '+items.map(esc).join(' \\u00b7 ');return d;};
+  if((c.covered||[]).length)card.append(row('\\u2705 Covered',c.covered,'cov-ok'));
+  if((c.partial||[]).length)card.append(row('\\ud83d\\udfe1 Partial',c.partial,'cov-mid'));
+  if((c.structurally_out||[]).length)card.append(row('\\ud83d\\udd34 Out of reach',c.structurally_out,'cov-out'));
+  if(c.note)card.append($('p','fineprint',esc(c.note)));
+  return card;
+}
 
 function fileRow(f){
   if(!f)return '';
@@ -191,6 +281,8 @@ function renderEN(p){
     h+='</table>';card.innerHTML+=h;box.append(card);
   }
 
+  {const vc=valuationCard(p); if(vc)box.append(vc);}
+
   const er=p.earnings_read||{};
   if(er.earnings_8k||er.latest_10q||er.latest_10k){
     const card=$('div','card');card.append($('h3',null,'Earnings read'));
@@ -207,6 +299,10 @@ function renderEN(p){
   if((p.news||[]).length){const ul=$('ul','list');p.news.forEach(n=>{const meta=[n.source,n.date].filter(Boolean).join(' \\u00b7 ');const li=$('li');li.innerHTML='<a href="'+esc(n.url)+'" target="_blank" rel="noopener">'+esc(n.headline)+'</a>'+(meta?' <span class="tag">'+esc(meta)+'</span>':'');ul.append(li);});nc.append(ul);}
   else nc.append($('p',null,'<span style="color:var(--muted)">No cached headlines for this ticker.</span>'));
   box.append(nc);
+
+  {const qc=qualitativeCard(p); if(qc)box.append(qc);}
+  {const oc=ownershipCard(p); if(oc)box.append(oc);}
+  {const cc=coverageCard(p); if(cc)box.append(cc);}
 
   if((p.sources||[]).length){const card=$('div','card');card.append($('h3',null,'Sources'));const ul=$('ul','list');p.sources.forEach(s=>{const li=$('li');const m=String(s).match(/(https?:\\/\\/\\S+)/);li.innerHTML=m?esc(s.replace(m[1],''))+'<a href="'+esc(m[1])+'" target="_blank" rel="noopener">'+esc(m[1])+'</a>':esc(s);ul.append(li);});card.append(ul);box.append(card);}
 }
