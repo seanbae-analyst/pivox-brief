@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "docs",
+  "functions": {
+    "api/research.py": { "memory": 512, "maxDuration": 30 }
+  }
+}

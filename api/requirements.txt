@@ -1,0 +1,5 @@
+# Lean deps for the serverless search function (cold-start friendly).
+# The search path (build_us_pack with_price=False) needs only these — yfinance and
+# anthropic are imported lazily elsewhere and are NOT needed here.
+requests>=2.31
+pydantic>=2.7

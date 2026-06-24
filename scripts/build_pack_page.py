@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv  # noqa: E402
 from engine import edgar  # noqa: E402
-from engine.research_pack import build_us_pack, coverage_manifest, earnings_read  # noqa: E402
+from engine.research_pack import build_us_pack, to_page_dict  # noqa: E402
 
 load_dotenv()  # EDGAR_USER_AGENT / DART_API_KEY from .env
 
@@ -30,28 +30,6 @@ DOCS = ROOT / "docs"
 
 def _d(obj):
     return asdict(obj) if is_dataclass(obj) else obj
-
-
-def pack_to_dict(pack) -> dict:
-    er = earnings_read(pack.filings)
-    return {
-        "ticker": pack.profile.tickers[0] if pack.profile.tickers else pack.query.upper(),
-        "name": pack.profile.name,
-        "exchanges": pack.profile.exchanges,
-        "industry": pack.profile.sic_description,
-        "cik": pack.profile.cik,
-        "language": pack.language,
-        "price": _d(pack.price),
-        "trend": [_d(r) for r in pack.trend],
-        "earnings_read": {k: _d(v) for k, v in er.items()},
-        "filings": [{**_d(f), "labels": edgar.decode_items(f.items)} for f in pack.filings],
-        "news": [_d(n) for n in pack.news],
-        "quant": pack.quant,
-        "qualitative": pack.qualitative,
-        "ownership": pack.ownership,
-        "coverage": coverage_manifest(pack),
-        "sources": pack.sources,
-    }
 
 
 def kr_pack_to_dict(pack) -> dict:
@@ -86,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     for query in args:
         us = build_us_pack(query)
         if us is not None:
-            packs.append(pack_to_dict(us))
+            packs.append(to_page_dict(us))
         else:
             try:
                 kr = build_kr_pack(query, year=date.today().year - 1)
@@ -161,12 +139,20 @@ ul.list li:last-child{border:0}
 .covrow:last-child{border:0}
 .covlabel{font-weight:700;margin-right:6px;white-space:nowrap}
 .cov-ok{color:var(--up)}.cov-mid{color:#b45309}.cov-out{color:var(--down)}
+.search{display:flex;gap:8px;margin:0 0 8px}
+.search input{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font:14px sans-serif}
+.search input:focus{outline:none;border-color:var(--accent)}
+.search button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 16px;font:600 13px sans-serif;cursor:pointer}
+.searchmsg{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 8px}
+.searchnote{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:9px 12px;margin:0 0 16px;font-size:12px;color:#475569}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>Pivox Brief — Research Pack</h1>
 <p class="sub">One page of price-relevant factors from official filings — SEC EDGAR (US) &amp; Open DART (KR). A research starting point — not investment advice.</p>
+<form class="search" id="search"><input id="q" type="text" placeholder="Search any US ticker — e.g. TSLA, COST, PLTR" autocomplete="off" spellcheck="false"><button type="submit">Search</button></form>
+<div class="searchmsg" id="searchmsg"></div>
 <div class="sel" id="sel"></div>
 <div id="pack"></div>
 <div class="foot">US: SEC EDGAR (XBRL) · KR: Open DART · prices = demo only · news = headlines + links only · built for $0. Descriptive analysis, not investment advice / 투자자문이 아닙니다.</div>
@@ -265,6 +251,7 @@ function renderEN(p){
   const box=document.getElementById('pack');box.innerHTML='';
   box.append($('h2','name',esc(p.name)+' <span style="color:var(--muted);font-weight:600">('+esc(p.ticker)+')</span>'));
   box.append($('p','meta',[p.exchanges.join(', '),esc(p.industry),'CIK '+esc(p.cik)].filter(Boolean).join(' \\u00b7 ')));
+  if(p.search_note){box.append($('div','searchnote',esc(p.search_note)));}
 
   const t=p.trend||[];const last=t[t.length-1];
   const chips=$('div','chips');
@@ -344,6 +331,24 @@ function build(){
   DATA.forEach((p,i)=>{const b=$('button',i===0?'on':null,esc(p.ticker));b.onclick=()=>{document.querySelectorAll('.sel button').forEach(x=>x.classList.remove('on'));b.classList.add('on');render(p);};sel.append(b);});
   if(DATA.length)render(DATA[0]);
 }
+// --- search: fetch any US ticker live from the serverless backend ---
+const SEARCH_API=/^(localhost|127\\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'');
+async function doSearch(t){
+  t=(t||'').trim(); if(!t)return;
+  const msg=document.getElementById('searchmsg');
+  if(!SEARCH_API){msg.innerHTML='Live search needs the API deployed \\u2014 set <code>window.PIVOX_API_BASE</code> to your endpoint (see DEPLOY.md). Featured tickers above work offline.';return;}
+  msg.textContent='Searching '+t.toUpperCase()+'\\u2026';
+  try{
+    const r=await fetch(SEARCH_API+'/api/research?ticker='+encodeURIComponent(t));
+    const d=await r.json();
+    if(!r.ok){msg.textContent=(d&&d.error)||('HTTP '+r.status);return;}
+    msg.textContent='';
+    document.querySelectorAll('.sel button').forEach(x=>x.classList.remove('on'));
+    render(d); window.scrollTo(0,0);
+  }catch(e){msg.textContent='Search failed: '+e.message;}
+}
+const _sf=document.getElementById('search');
+if(_sf)_sf.addEventListener('submit',e=>{e.preventDefault();doSearch(document.getElementById('q').value);});
 build();
 </script>
 </body>

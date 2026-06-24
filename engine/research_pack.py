@@ -531,3 +531,33 @@ def to_record(pack: ResearchPack) -> dict:
             "not investment advice (§10). Verify against the linked primary sources before acting."
         ),
     }
+
+
+def to_page_dict(pack: ResearchPack) -> dict:
+    """The shape the static page builder AND the search backend both emit, consumed by the
+    frontend ``render()``. Keyed for the renderer (flat snapshot fields, dataclass rows as
+    dicts, 8-K item labels precomputed). One source of truth so featured + searched tickers
+    render identically."""
+    from dataclasses import asdict, is_dataclass
+
+    d = lambda o: asdict(o) if is_dataclass(o) else o
+    er = earnings_read(pack.filings)
+    p = pack.profile
+    return {
+        "ticker": p.tickers[0] if p.tickers else pack.query.upper(),
+        "name": p.name,
+        "exchanges": p.exchanges,
+        "industry": p.sic_description,
+        "cik": p.cik,
+        "language": pack.language,
+        "price": d(pack.price),
+        "trend": [d(r) for r in pack.trend],
+        "earnings_read": {k: d(v) for k, v in er.items()},
+        "filings": [{**d(f), "labels": edgar.decode_items(f.items)} for f in pack.filings],
+        "news": [d(n) for n in pack.news],
+        "quant": pack.quant,
+        "qualitative": pack.qualitative,
+        "ownership": pack.ownership,
+        "coverage": coverage_manifest(pack),
+        "sources": pack.sources,
+    }
