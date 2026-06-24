@@ -211,6 +211,7 @@ function qualitativeCard(p){
 function ownershipCard(p){
   const o=p.ownership; if(!o||!((o.insider_transactions||[]).length||(o.large_holder_filings||[]).length)) return null;
   const card=$('div','card');card.append($('h3',null,'Insider & ownership activity'));
+  if(o.insider_pattern&&o.insider_pattern.observation){card.append($('p','fineprint',esc(o.insider_pattern.observation)));}
   const ul=$('ul','list');
   (o.insider_transactions||[]).forEach(t=>{
     const star=t.discretionary?'<span class="up">\\u2605</span> ':'';
@@ -236,6 +237,31 @@ function coverageCard(p){
   if((c.partial||[]).length)card.append(row('\\ud83d\\udfe1 Partial',c.partial,'cov-mid'));
   if((c.structurally_out||[]).length)card.append(row('\\ud83d\\udd34 Out of reach',c.structurally_out,'cov-out'));
   if(c.note)card.append($('p','fineprint',esc(c.note)));
+  return card;
+}
+
+function qualityCard(p){
+  const q=p.quality_flags; if(!q||!q.length) return null;
+  const card=$('div','card');card.append($('h3',null,'Quality flags'));
+  const ul=$('ul','list');
+  q.forEach(f=>{const li=$('li');li.innerHTML=esc(f.observation);ul.append(li);});
+  card.append(ul);
+  card.append($('p','fineprint','Descriptive observations derived from XBRL \\u2014 not a verdict.'));
+  return card;
+}
+
+function riskDeltaCard(p){
+  const rd=p.risk_delta; if(!rd||!((rd.added||[]).length||(rd.removed||[]).length)) return null;
+  const card=$('div','card');card.append($('h3',null,'Risk-factor delta (10-K Item 1A, YoY)'));
+  card.append($('p','fineprint','Latest 10-K '+esc(rd.current_filing.filed)+' ('+rd.current_count+' risks) vs prior '+esc(rd.prior_filing.filed)+' ('+rd.prior_count+').'));
+  if((rd.added||[]).length){
+    card.append($('div','subh','Added this year ('+rd.added.length+')'));
+    const ul=$('ul','list');rd.added.forEach(a=>{const li=$('li');li.innerHTML='<span class="up">\\u25b2</span> '+esc(a);ul.append(li);});card.append(ul);
+  }
+  if((rd.removed||[]).length){
+    card.append($('div','subh','Removed this year ('+rd.removed.length+')'));
+    const ul=$('ul','list');rd.removed.forEach(r=>{const li=$('li');li.innerHTML='<span class="down">\\u25bd</span> '+esc(r);ul.append(li);});card.append(ul);
+  }
   return card;
 }
 
@@ -269,6 +295,7 @@ function renderEN(p){
   }
 
   {const vc=valuationCard(p); if(vc)box.append(vc);}
+  {const qf=qualityCard(p); if(qf)box.append(qf);}
 
   const er=p.earnings_read||{};
   if(er.earnings_8k||er.latest_10q||er.latest_10k){
@@ -288,6 +315,7 @@ function renderEN(p){
   box.append(nc);
 
   {const qc=qualitativeCard(p); if(qc)box.append(qc);}
+  {const rc=riskDeltaCard(p); if(rc)box.append(rc);}
   {const oc=ownershipCard(p); if(oc)box.append(oc);}
   {const cc=coverageCard(p); if(cc)box.append(cc);}
 

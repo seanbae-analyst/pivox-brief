@@ -36,8 +36,12 @@ _SEARCH_NOTE = (
 
 
 def research(ticker: str) -> dict | None:
-    """Live EDGAR pack for an arbitrary US ticker (no demo price; cloud-safe)."""
-    pack = build_us_pack(ticker, with_price=False)
+    """Live EDGAR pack for an arbitrary US ticker (no demo price; cloud-safe).
+
+    Skips the risk-factor delta (it fetches two full 10-Ks → too slow for a request); the
+    earnings-quality flags and insider pattern are cheap (already-fetched XBRL/Form 4) and stay.
+    """
+    pack = build_us_pack(ticker, with_price=False, with_risk_delta=False)
     if pack is None:
         return None
     d = to_page_dict(pack)

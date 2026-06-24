@@ -64,3 +64,30 @@ def test_form4_raw_xml_url_strips_xsl_subdir():
     assert ownership.form4_raw_xml_url(f) == (
         "https://www.sec.gov/Archives/edgar/data/1045810/000169684126000008/wk-form4_123.xml"
     )
+
+
+def _tx(owner, code, value, disc, date="2026-06-01"):
+    return {"owner": owner, "code": code, "value": value, "discretionary": disc, "date": date}
+
+
+def test_insider_pattern_buys_sells_and_cluster():
+    txs = [
+        _tx("A", "P", 1000.0, True, "2026-06-01"),
+        _tx("B", "P", 2000.0, True, "2026-06-02"),
+        _tx("C", "S", 500.0, True, "2026-06-03"),
+        _tx("A", "F", 300.0, False, "2026-06-04"),
+    ]
+    p = ownership.insider_pattern(txs)
+    assert p["open_market_buys"] == 2 and p["open_market_sells"] == 1
+    assert p["buyers"] == ["A", "B"] and p["cluster_buy"] is True   # 2 distinct buyers
+    assert p["buy_value"] == 3000.0 and p["sell_value"] == 500.0
+    assert p["net_discretionary_value"] == 2500.0
+    assert p["routine_count"] == 1
+    assert "buy" in p["observation"].lower()
+
+
+def test_insider_pattern_routine_only():
+    p = ownership.insider_pattern([_tx("A", "F", 100.0, False), _tx("A", "M", 50.0, False)])
+    assert p["open_market_buys"] == 0 and p["open_market_sells"] == 0
+    assert p["cluster_buy"] is False
+    assert "routine" in p["observation"]

@@ -49,6 +49,8 @@ class ResearchPack:
     quant: Optional[dict] = None        # engine.factors.compute_quant block (Layer 1)
     qualitative: Optional[dict] = None  # engine.research_schema.QualitativeBlock dump (Layer 2)
     ownership: Optional[dict] = None    # engine.ownership.ownership_block (insider Form 4 + 13D/G)
+    quality_flags: Optional[list] = None  # engine.quality_flags (earnings-quality observations)
+    risk_delta: Optional[dict] = None   # engine.risk_delta (10-K Item 1A YoY change)
 
 
 # ── pure assembly ────────────────────────────────────────────────────────────
@@ -155,7 +157,7 @@ def _language_for(exchanges: list[str]) -> str:
 
 # ── I/O entry point ──────────────────────────────────────────────────────────
 def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
-                  with_ownership: bool = True) -> Optional[ResearchPack]:
+                  with_ownership: bool = True, with_risk_delta: bool = True) -> Optional[ResearchPack]:
     """Resolve a US ticker/name via EDGAR and assemble its research pack.
 
     Returns None if the query doesn't resolve in EDGAR — the caller can then route
@@ -197,6 +199,21 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
         except Exception:
             ownership = None  # never block the pack on the ownership fetch
 
+    # Refined signal (STRATEGY.md wave 1): earnings-quality flags (cheap, from XBRL we have)
+    # + the year-over-year risk-factor delta (fetches 2 10-Ks — gated for latency-sensitive callers).
+    from engine.quality_flags import quality_flags as _quality_flags
+
+    quality = _quality_flags(trend, ext)
+
+    risk_delta_block = None
+    if with_risk_delta:
+        try:
+            from engine.risk_delta import risk_delta as _risk_delta
+
+            risk_delta_block = _risk_delta(ref.cik)
+        except Exception:
+            risk_delta_block = None
+
     from engine.news import load_news
     from engine.qualitative import load_qualitative
 
@@ -216,6 +233,8 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
         quant=quant,
         qualitative=load_qualitative(ref.ticker),
         ownership=ownership,
+        quality_flags=quality,
+        risk_delta=risk_delta_block,
     )
 
 
@@ -308,6 +327,15 @@ def render_markdown(pack: ResearchPack) -> str:
             )
         lines.append("")
 
+    # Quality flags — refined earnings-quality / trajectory observations (descriptive)
+    if pack.quality_flags:
+        lines.append("## Quality flags")
+        for f in pack.quality_flags:
+            lines.append(f"- {f['observation']}")
+        lines.append("")
+        lines.append("_Descriptive observations derived from XBRL — not a verdict (§10)._")
+        lines.append("")
+
     # Earnings read — the filings a reader reaches for first
     lines.append("## Earnings read")
     read = earnings_read(pack.filings)
@@ -376,11 +404,33 @@ def render_markdown(pack: ResearchPack) -> str:
         lines.append("_Themes mapped to a fixed vocabulary; paraphrased from official filings (no verbatim text, §1)._")
         lines.append("")
 
+    # Risk-factor delta — what changed in 10-K Item 1A year over year
+    rd = pack.risk_delta
+    if rd and (rd.get("added") or rd.get("removed")):
+        lines.append("## Risk-factor delta (10-K Item 1A, YoY)")
+        lines.append(f"_Latest 10-K {rd['current_filing']['filed']} ({rd['current_count']} risks) "
+                     f"vs prior {rd['prior_filing']['filed']} ({rd['prior_count']})._")
+        if rd.get("added"):
+            lines.append("")
+            lines.append(f"**Added this year ({len(rd['added'])}):**")
+            for a in rd["added"]:
+                lines.append(f"- ▲ {a}")
+        if rd.get("removed"):
+            lines.append("")
+            lines.append(f"**Removed this year ({len(rd['removed'])}):**")
+            for r in rd["removed"]:
+                lines.append(f"- ▽ {r}")
+        lines.append("")
+
     # Insider & ownership activity — Form 4 (P/S flagged) + 13D/G links
     own = pack.ownership or {}
     itx, lhf = own.get("insider_transactions", []), own.get("large_holder_filings", [])
+    pat = own.get("insider_pattern")
     if itx or lhf:
         lines.append("## Insider & ownership activity")
+        if pat and pat.get("observation"):
+            lines.append(f"_{pat['observation']}_")
+            lines.append("")
         for t in itx:
             sh = f"{t['shares']:,.0f}" if t.get("shares") is not None else "—"
             val = f" (~{_fmt_usd(t['value'])})" if t.get("value") is not None else ""
@@ -455,6 +505,12 @@ def coverage_manifest(pack: ResearchPack) -> dict:
     own = pack.ownership or {}
     if own.get("insider_transactions") or own.get("large_holder_filings"):
         covered.append("Insider transactions (Form 4, open-market P/S flagged) + 13D/G filings")
+    if own.get("insider_pattern"):
+        covered.append("Insider behavioral pattern (cluster buys, net discretionary flow)")
+    if pack.quality_flags:
+        covered.append("Earnings-quality flags — accruals, cash conversion, margin/growth trajectory")
+    if pack.risk_delta:
+        covered.append("Risk-factor delta — 10-K Item 1A year-over-year (added/removed risks)")
     partial = [
         "Management commentary — headline + link only (transcripts / interviews are copyrighted)",
         "Regulatory / legal / litigation events — via filings + headlines",
@@ -524,6 +580,8 @@ def to_record(pack: ResearchPack) -> dict:
         ],
         "qualitative": pack.qualitative,  # Layer 2 — filings-derived themes / guidance / tone / risk
         "ownership": pack.ownership,       # insider Form 4 + large-holder 13D/G
+        "quality_flags": pack.quality_flags,  # earnings-quality observations (refined signal)
+        "risk_delta": pack.risk_delta,     # 10-K Item 1A YoY change
         "coverage": coverage_manifest(pack),
         "sources": pack.sources,
         "disclaimer": (
@@ -558,6 +616,8 @@ def to_page_dict(pack: ResearchPack) -> dict:
         "quant": pack.quant,
         "qualitative": pack.qualitative,
         "ownership": pack.ownership,
+        "quality_flags": pack.quality_flags,
+        "risk_delta": pack.risk_delta,
         "coverage": coverage_manifest(pack),
         "sources": pack.sources,
     }

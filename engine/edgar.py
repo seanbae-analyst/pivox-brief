@@ -503,6 +503,7 @@ def extended_facts(cik: int | str, n_recent: int = 6) -> dict[str, FinancialSeri
         "da": DA_CONCEPTS,
         "revenue_annual": REVENUE_CONCEPTS,
         "operating_income_annual": OPERATING_INCOME_CONCEPTS,
+        "net_income_annual": NET_INCOME_CONCEPTS,
     }
     for key, concepts in annual.items():
         series = best_series(cik, concepts, n_recent, kind="annual")
