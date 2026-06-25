@@ -20,10 +20,14 @@ identically. Set EDGAR_USER_AGENT in the deployment env (SEC fair-access).
 from __future__ import annotations
 
 import json
+import re
 import sys
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+
+# 1–12 chars, ticker-shaped — reject junk before doing any (expensive) EDGAR work.
+_VALID_TICKER = re.compile(r"^[A-Za-z0-9.\-]{1,12}$")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -38,10 +42,11 @@ _SEARCH_NOTE = (
 def research(ticker: str) -> dict | None:
     """Live EDGAR pack for an arbitrary US ticker (no demo price; cloud-safe).
 
-    Skips the risk-factor delta (it fetches two full 10-Ks → too slow for a request); the
-    earnings-quality flags and insider pattern are cheap (already-fetched XBRL/Form 4) and stay.
+    Skips the risk-factor delta (it fetches two full 10-Ks → too slow for a request) and caps the
+    insider Form-4 fetches (a per-request fan-out / SEC-rate-limit risk on a public endpoint). The
+    earnings-quality flags stay (they're free — already-fetched XBRL).
     """
-    pack = build_us_pack(ticker, with_price=False, with_risk_delta=False)
+    pack = build_us_pack(ticker, with_price=False, with_risk_delta=False, insider_max_filings=5)
     if pack is None:
         return None
     d = to_page_dict(pack)
@@ -65,14 +70,20 @@ class handler(BaseHTTPRequestHandler):  # Vercel Python entrypoint (class named 
         self._send(204, {})
 
     def do_GET(self) -> None:
-        query = parse_qs(urlparse(self.path).query)
+        try:
+            query = parse_qs(urlparse(self.path).query)
+        except Exception:
+            return self._send(400, {"error": "bad request"})
         ticker = (query.get("ticker", [""])[0] or "").strip()
         if not ticker:
             return self._send(400, {"error": "missing ?ticker= (e.g. /api/research?ticker=NVDA)"})
+        if not _VALID_TICKER.match(ticker):
+            return self._send(400, {"error": "invalid ticker — 1–12 chars, letters/digits/.- only"})
         try:
             result = research(ticker)
-        except Exception as exc:  # never leak a stack trace to the client
-            return self._send(502, {"error": f"lookup failed for '{ticker}': {exc}"})
+        except Exception as exc:  # log server-side; return a generic message (no internals leaked)
+            print(f"[research] error for {ticker!r}: {exc}", file=sys.stderr)
+            return self._send(502, {"error": "lookup failed"})
         if result is None:
-            return self._send(404, {"error": f"'{ticker}' did not resolve in SEC EDGAR (US issuers only here)."})
+            return self._send(404, {"error": "ticker did not resolve in SEC EDGAR (US issuers only)"})
         return self._send(200, result)

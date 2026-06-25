@@ -48,5 +48,16 @@ def test_dilution_sign():
     assert "net buyback" in f["share_count_change"]["observation"]
 
 
+def test_net_loss_emits_neutral_observation_not_ratios():
+    ext = {"net_income_annual": series([("2025-12-31", -50.0)]),
+           "ocf": series([("2025-12-31", 30.0)]),
+           "capex": series([("2025-12-31", 10.0)])}
+    f = {x["key"]: x for x in quality_flags([], ext)}
+    assert "net_loss" in f                  # neutral loss flag emitted
+    assert "cash_conversion" not in f       # ratios omitted (would be -0.6x — nonsense)
+    assert "fcf_conversion" not in f
+    assert "not meaningful" in f["net_loss"]["observation"]
+
+
 def test_omits_absent_inputs():
     assert quality_flags([], {}) == []

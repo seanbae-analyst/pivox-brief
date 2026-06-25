@@ -157,7 +157,8 @@ def _language_for(exchanges: list[str]) -> str:
 
 # ── I/O entry point ──────────────────────────────────────────────────────────
 def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
-                  with_ownership: bool = True, with_risk_delta: bool = True) -> Optional[ResearchPack]:
+                  with_ownership: bool = True, with_risk_delta: bool = True,
+                  insider_max_filings: int = 20) -> Optional[ResearchPack]:
     """Resolve a US ticker/name via EDGAR and assemble its research pack.
 
     Returns None if the query doesn't resolve in EDGAR — the caller can then route
@@ -195,7 +196,7 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
         try:
             from engine.ownership import ownership_block
 
-            ownership = ownership_block(ref.cik)
+            ownership = ownership_block(ref.cik, max_filings=insider_max_filings)
         except Exception:
             ownership = None  # never block the pack on the ownership fetch
 

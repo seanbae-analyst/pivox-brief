@@ -83,9 +83,9 @@ def parse_form4(xml_text: str, url: str = "") -> list[dict]:
     return out
 
 
-def _fetch_insider_txs(cik, max_filings: int = 20) -> list[dict]:
-    """Parse the last ``max_filings`` Form 4s into a flat transaction list (one malformed
-    filing never breaks the pack)."""
+def _fetch_insider_txs(cik, max_filings: int = 20) -> tuple[list[dict], int]:
+    """Parse the last ``max_filings`` Form 4s into a flat transaction list (one malformed filing
+    never breaks the pack). Returns (transactions, number_of_filings_fetched)."""
     _, filings = edgar.company_filings(cik, forms=("4",), limit=max_filings)
     txs: list[dict] = []
     for f in filings:
@@ -93,7 +93,7 @@ def _fetch_insider_txs(cik, max_filings: int = 20) -> list[dict]:
             txs += parse_form4(edgar.fetch_text(form4_raw_xml_url(f)), url=f.url)
         except Exception:
             continue
-    return txs
+    return txs, len(filings)
 
 
 def _rank(txs: list[dict], max_tx: int = 8) -> list[dict]:
@@ -105,7 +105,8 @@ def _rank(txs: list[dict], max_tx: int = 8) -> list[dict]:
 
 def insider_transactions(cik, max_filings: int = 10, max_tx: int = 8) -> list[dict]:
     """Recent insider transactions, ranked (public API kept for callers/tests)."""
-    return _rank(_fetch_insider_txs(cik, max_filings), max_tx)
+    txs, _ = _fetch_insider_txs(cik, max_filings)
+    return _rank(txs, max_tx)
 
 
 def _usd(v: float) -> str:
@@ -117,10 +118,13 @@ def _usd(v: float) -> str:
     return f"${v:,.0f}"
 
 
-def insider_pattern(txs: list[dict]) -> dict:
+def insider_pattern(txs: list[dict], n_filings: Optional[int] = None) -> dict:
     """Refine a Form 4 transaction list into a DESCRIPTIVE behavioral signal (STRATEGY.md):
     open-market buys vs sells, how many distinct insiders (cluster), net discretionary value,
-    and how much is routine (grants/tax/option). Never a verdict — the reader judges (§10)."""
+    and how much is routine (grants/tax/option). Never a verdict — the reader judges (§10).
+
+    ``n_filings`` = how many Form 4 *filings* the transactions came from (one filing can hold
+    several transactions), so the window can be stated honestly."""
     P = [t for t in txs if t["code"] == "P"]
     S = [t for t in txs if t["code"] == "S"]
     routine = [t for t in txs if t["code"] in ("F", "M", "A", "G", "C", "X")]
@@ -128,6 +132,7 @@ def insider_pattern(txs: list[dict]) -> dict:
     sellers = sorted({t["owner"] for t in S})
     buy_val = sum(t["value"] or 0 for t in P)
     sell_val = sum(t["value"] or 0 for t in S)
+    no_price = sum(1 for t in (P + S) if t.get("value") is None)
     dates = [t["date"] for t in txs if t["date"]]
 
     obs = []
@@ -137,6 +142,11 @@ def insider_pattern(txs: list[dict]) -> dict:
         obs.append(f"{len(S)} open-market sale(s) by {len(sellers)} insider(s) (~{_usd(sell_val)})")
     if not P and not S:
         obs.append(f"no discretionary open-market trades — only routine grants/tax/option ({len(routine)})")
+
+    window = (f"the most recent {n_filings} Form 4 filings" if n_filings is not None
+              else f"the most recent {len(txs)} Form 4 transactions")
+    note = (f" (value excludes {no_price} trade(s) with no reported price)"
+            if no_price and (P or S) else "")
 
     return {
         "open_market_buys": len(P),
@@ -148,10 +158,11 @@ def insider_pattern(txs: list[dict]) -> dict:
         "net_discretionary_value": round(buy_val - sell_val, 0),
         "cluster_buy": len(buyers) >= 2,            # several insiders buying at once = notable
         "routine_count": len(routine),
-        "window_filings": len(txs),
+        "trades_without_price": no_price,
+        "window_filings": n_filings,
+        "window_transactions": len(txs),
         "window_dates": [min(dates), max(dates)] if dates else [],
-        "observation": ("Across the most recent " + str(len(txs)) + " Form 4 transactions: "
-                        + "; ".join(obs) + "."),
+        "observation": (f"Across {window} ({len(txs)} transactions): " + "; ".join(obs) + "." + note),
     }
 
 
@@ -163,10 +174,11 @@ def large_holder_filings(cik, limit: int = 6) -> list[dict]:
 
 def ownership_block(cik, max_filings: int = 20) -> dict:
     """Insider activity (ranked display list + behavioral pattern) + large-holder filings.
-    Fetches the Form 4 batch once and derives both views from it."""
-    txs = _fetch_insider_txs(cik, max_filings)
+    Fetches the Form 4 batch once and derives both views from it. ``max_filings`` bounds the
+    EDGAR fetches — keep it small on latency-sensitive paths (the search backend caps it)."""
+    txs, n_filings = _fetch_insider_txs(cik, max_filings)
     return {
         "insider_transactions": _rank(txs, max_tx=8),
-        "insider_pattern": insider_pattern(txs),
+        "insider_pattern": insider_pattern(txs, n_filings=n_filings),
         "large_holder_filings": large_holder_filings(cik),
     }

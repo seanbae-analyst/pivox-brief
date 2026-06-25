@@ -28,12 +28,14 @@ def test_ttm_needs_four_points():
     assert factors._ttm(None) is None
 
 
-def test_total_debt_prefers_single_tag_then_synthesizes():
-    ext = {"debt_total": series([("2026-03-28", 82.0)])}
-    assert factors.total_debt(ext) == 82.0
-    ext2 = {"debt_noncurrent": series([("2026-03-28", 74.0)]),
-            "debt_current": series([("2026-03-28", 8.0)])}
-    assert factors.total_debt(ext2) == 82.0
+def test_total_debt_prefers_component_synthesis():
+    # synthesis (noncurrent + current) preferred even when a single total tag is present, since
+    # us-gaap:LongTermDebt is the noncurrent-only carrying amount for many issuers.
+    ext = {"debt_total": series([("2026-03-28", 100.0)]),   # e.g. noncurrent-only, would understate
+           "debt_noncurrent": series([("2026-03-28", 74.0)]),
+           "debt_current": series([("2026-03-28", 8.0)])}
+    assert factors.total_debt(ext) == 82.0                  # 74 + 8, not the 100 single tag
+    assert factors.total_debt({"debt_total": series([("2026-03-28", 82.0)])}) == 82.0  # fallback only
     assert factors.total_debt({}) is None
 
 
@@ -69,7 +71,7 @@ def test_compute_quant_core_ratios():
 
     val = block["valuation"]
     assert val["market_cap"] == 4000.0          # 100 shares * 40
-    assert val["pe_ttm"] == 10.0                # 40 / 4.0
+    assert val["pe_ttm"] == 40.0                # market cap 4000 / TTM net income 100
     assert val["ps_ttm"] == 10.0                # 4000 / 400
     assert val["pb"] == 20.0                    # 4000 / 200
     # EV = 4000 + 80 - 50 = 4030; EBITDA = 120 + 10 = 130 -> 31.0
@@ -101,7 +103,8 @@ def test_compute_quant_degrades_without_inputs():
     assert "price" not in block                  # no technicals passed
 
 
-def test_negative_eps_yields_no_pe():
-    fin = {"revenue": _four(100.0), "eps_diluted": _four(-1.0)}
-    block = factors.compute_quant(fin, {}, price=40.0)
-    assert block["valuation"]["pe_ttm"] is None  # loss-making → P/E omitted, not negative
+def test_negative_net_income_yields_no_pe():
+    fin = {"revenue": _four(100.0), "net_income": _four(-25.0)}   # TTM net income -100
+    ext = {"shares": series([("2026-03-31", 100.0)])}            # market cap present (100 * 40)
+    block = factors.compute_quant(fin, ext, price=40.0)
+    assert block["valuation"]["pe_ttm"] is None                  # loss-making → P/E omitted, not negative

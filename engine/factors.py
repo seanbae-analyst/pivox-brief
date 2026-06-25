@@ -65,15 +65,14 @@ def _ratio(numer: Optional[float], denom: Optional[float], *, pct: bool = False,
 
 
 def total_debt(ext: dict[str, FinancialSeries]) -> Optional[float]:
-    """Prefer a single total-debt tag; else synthesize non-current + current portions."""
-    t = _latest(ext.get("debt_total"))
-    if t is not None:
-        return t
+    """Prefer the non-current + current synthesis (always the true total); fall back to the
+    single ``LongTermDebt`` tag only if the components are absent — that tag is the *noncurrent*
+    carrying amount for many issuers, so preferring it would understate total debt / D/E."""
     nc = _latest(ext.get("debt_noncurrent"))
     cu = _latest(ext.get("debt_current"))
-    if nc is None and cu is None:
-        return None
-    return (nc or 0.0) + (cu or 0.0)
+    if nc is not None or cu is not None:
+        return (nc or 0.0) + (cu or 0.0)
+    return _latest(ext.get("debt_total"))
 
 
 # ── factor assembly ─────────────────────────────────────────────────────────
@@ -90,7 +89,6 @@ def compute_quant(
     # TTM income statement
     ttm_revenue = _ttm(fin.get("revenue"))
     ttm_net_income = _ttm(fin.get("net_income"))
-    ttm_eps = _ttm(fin.get("eps_diluted"))
     ttm_oper_income = _ttm(fin.get("operating_income"))
     ttm_gross_profit = _ttm(fin.get("gross_profit"))
 
@@ -118,18 +116,29 @@ def compute_quant(
 
     # FCF on a consistent annual basis (OCF − capex).
     ann_fcf = (ann_ocf - ann_capex) if (ann_ocf is not None and ann_capex is not None) else None
-    ebitda = (ann_oper_income + ann_da) if (ann_oper_income is not None and ann_da is not None) else None
+
+    # EBITDA only when operating income and D&A are from the SAME fiscal year (each is "latest
+    # annual" independently and a tag can lag a year — summing two different years is wrong).
+    oi_s, da_s = ext.get("operating_income_annual"), ext.get("da")
+    ebitda = None
+    if (ann_oper_income is not None and ann_da is not None
+            and oi_s and da_s and oi_s.points[-1].end == da_s.points[-1].end):
+        ebitda = ann_oper_income + ann_da
 
     valuation = {
         "market_cap": round(market_cap, 0) if market_cap else None,
-        "pe_ttm": _ratio(price, ttm_eps) if (price and ttm_eps and ttm_eps > 0) else None,
+        # P/E = market cap / TTM net income (NOT a sum of quarterly per-share EPS, which is
+        # invalid when share count changes across the year).
+        "pe_ttm": _ratio(market_cap, ttm_net_income) if (market_cap and ttm_net_income and ttm_net_income > 0) else None,
         "ps_ttm": _ratio(market_cap, ttm_revenue),
         "pb": _ratio(market_cap, equity),
         "ev_ebitda": _ratio(enterprise_value, ebitda) if (ebitda and ebitda > 0) else None,
         "fcf_yield_pct": _ratio(ann_fcf, market_cap, pct=True),
         "dividend_yield_pct": _ratio(ann_div, market_cap, pct=True),
         "buyback_yield_pct": _ratio(ann_buyback, market_cap, pct=True),
-        "ev_basis": "EV uses current price + latest balance sheet; EBITDA = latest annual operating income + D&A.",
+        "ev_basis": "EV uses current price + latest balance sheet; EBITDA = latest annual operating "
+                    "income + D&A (same FY). Market cap uses cover-page shares of ONE class — "
+                    "multi-class issuers (e.g. GOOGL, BRK) are understated.",
     }
     profitability = {
         "gross_margin_ttm_pct": _ratio(ttm_gross_profit, ttm_revenue, pct=True),

@@ -46,27 +46,38 @@ def quality_flags(trend: list, ext: dict[str, FinancialSeries]) -> list[dict]:
     out: list[dict] = []
 
     # ── cash quality (latest fiscal year, consistent basis) ───────────────────
+    # Conversion ratios (OCF/NI, FCF/NI) and the accrual gap are only meaningful for a profit;
+    # for a net loss they invert or read as nonsense (e.g. "OCF was -3.2x net income"), so we
+    # emit a neutral loss observation instead.
     ni = _latest(ext.get("net_income_annual"))
     ocf = _latest(ext.get("ocf"))
     capex = _latest(ext.get("capex"))
-    if ni and ocf is not None:
-        gap = round((ni - ocf) / abs(ni) * 100.0, 1)
-        out.append({
-            "key": "accrual_gap", "label": "Accrual gap (NI vs OCF)", "value": gap, "unit": "%",
-            "observation": f"Annual net income {'exceeded' if gap > 0 else 'trailed'} operating "
-                           f"cash flow by {abs(gap)}% (accrual gap).",
-            "basis": "latest FY net income vs operating cash flow",
-        })
-        out.append({
-            "key": "cash_conversion", "label": "Cash conversion (OCF/NI)", "value": round(ocf / ni, 2), "unit": "x",
-            "observation": f"Operating cash flow was {round(ocf / ni, 2)}x net income.",
-            "basis": "latest FY",
-        })
-        if capex is not None:
-            fcf = ocf - capex
+    if ni is not None and ocf is not None:
+        if ni > 0:
+            gap = round((ni - ocf) / ni * 100.0, 1)
             out.append({
-                "key": "fcf_conversion", "label": "FCF conversion (FCF/NI)", "value": round(fcf / ni, 2), "unit": "x",
-                "observation": f"Free cash flow (OCF − capex) was {round(fcf / ni, 2)}x net income.",
+                "key": "accrual_gap", "label": "Accrual gap (NI vs OCF)", "value": gap, "unit": "%",
+                "observation": f"Annual net income {'exceeded' if gap > 0 else 'trailed'} operating "
+                               f"cash flow by {abs(gap)}% (accrual gap).",
+                "basis": "latest FY net income vs operating cash flow",
+            })
+            out.append({
+                "key": "cash_conversion", "label": "Cash conversion (OCF/NI)", "value": round(ocf / ni, 2), "unit": "x",
+                "observation": f"Operating cash flow was {round(ocf / ni, 2)}x net income.",
+                "basis": "latest FY",
+            })
+            if capex is not None:
+                fcf = ocf - capex
+                out.append({
+                    "key": "fcf_conversion", "label": "FCF conversion (FCF/NI)", "value": round(fcf / ni, 2), "unit": "x",
+                    "observation": f"Free cash flow (OCF − capex) was {round(fcf / ni, 2)}x net income.",
+                    "basis": "latest FY",
+                })
+        else:
+            out.append({
+                "key": "net_loss", "label": "Net loss (latest FY)", "value": round(ni, 0), "unit": None,
+                "observation": "Latest fiscal year recorded a net loss; cash-conversion and accrual "
+                               f"ratios are not meaningful (operating cash flow was {round(ocf, 0):,.0f}).",
                 "basis": "latest FY",
             })
 

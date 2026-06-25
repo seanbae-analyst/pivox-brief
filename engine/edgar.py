@@ -381,10 +381,39 @@ def parse_annual(data: dict, n: int = 1) -> list[FactPoint]:
 
 
 # ── I/O wrappers (fetch + parse) ─────────────────────────────────────────────
+_TICKER_TABLE: Optional[dict] = None
+
+
+def _ticker_table() -> dict:
+    """Process-lifetime cache of the ticker→CIK table (a few hundred KB). Re-downloading
+    it per call was a real cost on the serverless search path and when resolving a watchlist."""
+    global _TICKER_TABLE
+    if _TICKER_TABLE is None:
+        _TICKER_TABLE = parse_company_tickers(_get(f"{SEC_WWW}/files/company_tickers.json"))
+    return _TICKER_TABLE
+
+
 def resolve_ticker(query: str) -> Optional[CompanyRef]:
     """Resolve a ticker (exact) or company name (substring) to a CompanyRef."""
-    table = parse_company_tickers(_get(f"{SEC_WWW}/files/company_tickers.json"))
-    return match_company(table, query)
+    return match_company(_ticker_table(), query)
+
+
+def first_series(
+    cik: int | str,
+    concepts: tuple[str, ...],
+    n_quarters: int = 4,
+    *,
+    namespace: str = "us-gaap",
+    kind: str = "duration",
+) -> Optional[FinancialSeries]:
+    """The FIRST concept in preference order that returns data. Use this (not ``best_series``)
+    when the candidates are NOT synonyms — e.g. cash, where the preferred tag is unrestricted
+    cash and the fallback also includes restricted cash (different meanings)."""
+    for concept in concepts:
+        points = concept_points(cik, concept, n_quarters, namespace=namespace, kind=kind)
+        if points:
+            return FinancialSeries(concept=concept, points=points)
+    return None
 
 
 def company_filings(
@@ -489,8 +518,11 @@ def extended_facts(cik: int | str, n_recent: int = 6) -> dict[str, FinancialSeri
         "debt_noncurrent": (DEBT_NONCURRENT_CONCEPTS, "us-gaap"),
         "debt_current": (DEBT_CURRENT_CONCEPTS, "us-gaap"),
     }
+    # Balance-sheet tags are always currently filed, and several candidate lists are NOT
+    # synonyms (cash: unrestricted vs incl-restricted; equity: vs incl-noncontrolling), so the
+    # FIRST preferred tag that resolves is the right pick — not best_series's "latest end".
     for key, (concepts, ns) in instant.items():
-        series = best_series(cik, concepts, n_recent, namespace=ns, kind="instant")
+        series = first_series(cik, concepts, n_recent, namespace=ns, kind="instant")
         if series:
             out[key] = series
 

@@ -60,10 +60,21 @@ def extract_risk_headers(item1a: str, max_headers: int = 50) -> list[str]:
     return heads
 
 
-def diff_risks(current: list[str], prior: list[str], threshold: float = 0.5) -> dict:
-    """Risks present this year with no close prior match = added; the reverse = removed."""
-    added = [c for c in current if max((_similar(c, p) for p in prior), default=0.0) < threshold]
-    removed = [p for p in prior if max((_similar(p, c) for c in current), default=0.0) < threshold]
+def _contains(a: str, b: str) -> float:
+    """Asymmetric overlap: share of the SMALLER risk's significant words also in the other.
+    Robust to a risk being reworded longer or shorter year to year — unlike symmetric Jaccard,
+    whose union denominator tanks the score on rephrasing and manufactures false added/removed."""
+    ta, tb = _tokens(a), _tokens(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / min(len(ta), len(tb))
+
+
+def diff_risks(current: list[str], prior: list[str], threshold: float = 0.6) -> dict:
+    """A current risk with no close prior match = added; the reverse = removed. Uses asymmetric
+    containment so a reworded-but-same risk matches and only genuinely new/dropped risks surface."""
+    added = [c for c in current if max((_contains(c, p) for p in prior), default=0.0) < threshold]
+    removed = [p for p in prior if max((_contains(p, c) for c in current), default=0.0) < threshold]
     return {"added": added, "removed": removed}
 
 
@@ -78,7 +89,9 @@ def risk_delta(cik) -> dict | None:
         pri_h = extract_risk_headers(filings.risk_factors(filings.fetch_filing_text(pri.url)))
     except Exception:
         return None
-    if not cur_h or not pri_h:
+    # Too few headers means the summary didn't parse into discrete risks (e.g. a single-paragraph
+    # summary) — return None rather than emit a bogus "everything added/removed" diff.
+    if len(cur_h) < 4 or len(pri_h) < 4:
         return None
     d = diff_risks(cur_h, pri_h)
     return {
