@@ -97,64 +97,118 @@ TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pivox Brief — Research Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0f172a;--muted:#64748b;--line:#e6e8ec;--soft:#f8fafc;--accent:#0d9488;--up:#0d9488;--down:#dc2626}
+:root{
+  --bg:#0a0b0d;--panel:#101317;--panel2:#161a20;--soft:#161a20;
+  --ink:#ECEAE3;--muted:#8b919b;--faint:#5f656e;
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.05);
+  --accent:#c6a063;--accent2:#dcb979;--accent-dim:rgba(198,160,99,.13);
+  --up:#5ec08a;--down:#e26d60;--amber:#d6a44f;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"Playfair Display",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
 *{box-sizing:border-box}
-body{margin:0;background:#fff;color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:920px;margin:0 auto;padding:28px 20px 64px}
-h1{font-size:20px;margin:0 0 2px;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
-.sel{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
-.sel button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font:600 13px sans-serif;color:var(--muted);cursor:pointer}
-.sel button.on{border-color:var(--accent);color:var(--ink);background:var(--soft)}
-h2.name{font-size:22px;margin:0 0 2px;letter-spacing:-.01em}
-.meta{color:var(--muted);font-size:12px;margin:0 0 18px}
-.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
-.chip{border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:92px}
-.chip b{display:block;font-size:17px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.chip span{color:var(--muted);font-size:11px}
-.card{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
-.card h3{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--accent-dim)}
+.wrap{max-width:960px;margin:0 auto;padding:48px 24px 80px}
+h1{font:600 30px/1.15 var(--serif);margin:0 0 6px;letter-spacing:.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 26px;max-width:680px}
+.search{display:flex;gap:10px;margin:0 0 10px}
+.search input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font:14px var(--sans);color:var(--ink)}
+.search input::placeholder{color:var(--faint)}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.search button{border:1px solid var(--accent);background:var(--accent);color:#0a0b0d;border-radius:10px;padding:11px 20px;font:600 13px var(--sans);cursor:pointer;transition:filter .15s}
+.search button:hover{filter:brightness(1.08)}
+.searchmsg{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 8px}
+.searchnote{background:var(--accent-dim);border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:10px;padding:10px 14px;margin:0 0 18px;font-size:12.5px;color:var(--ink)}
+.sel{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 30px}
+.sel button{appearance:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 16px;font:600 12.5px var(--mono);letter-spacing:.02em;color:var(--muted);cursor:pointer;transition:all .15s}
+.sel button:hover{color:var(--ink)}
+.sel button.on{border-color:var(--accent);color:var(--accent2);background:var(--accent-dim)}
+h2.name{font:700 30px/1.1 var(--serif);margin:0 0 4px;letter-spacing:.01em}
+h2.name span{color:var(--accent)!important;font-family:var(--mono)!important;font-size:.58em;letter-spacing:.04em}
+.meta{color:var(--muted);font:12px/1.5 var(--mono);margin:0 0 22px;letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+.chip{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px 12px 18px;min-width:108px;overflow:hidden}
+.chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);opacity:.55}
+.chip b{display:block;font:600 19px var(--mono);color:var(--ink);letter-spacing:-.01em}
+.chip span{display:block;margin-top:4px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
+.card h3{display:flex;align-items:center;gap:9px;margin:0 0 16px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--accent2)}
+.card h3::before{content:"";width:16px;height:1.5px;background:var(--accent);opacity:.7}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-td.num,th.num{text-align:right;font-family:ui-monospace,Menlo,monospace}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line2)}
+tr:last-child td{border-bottom:0}
+th{color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em}
+tbody tr:hover td{background:var(--panel2)}
+td{color:var(--ink)}
+td.num,th.num{text-align:right;font-family:var(--mono)}
 .up{color:var(--up)}.down{color:var(--down)}
-a{color:#0e7490;text-decoration:none}a:hover{text-decoration:underline}
+a{color:var(--accent2);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
+a:hover{border-bottom-color:var(--accent2)}
 ul.list{margin:0;padding:0;list-style:none}
-ul.list li{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+ul.list li{padding:11px 0;border-bottom:1px solid var(--line2);font-size:13.5px;line-height:1.65}
 ul.list li:last-child{border:0}
-.tag{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;margin-left:4px;color:#475569}
-.lead{border-left:3px solid var(--accent);padding-left:12px;margin:8px 0}
-.foot{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
-.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
-.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.stat b{display:block;font-size:15px;font-family:ui-monospace,Menlo,monospace}
-.stat span{color:var(--muted);font-size:11px}
-.priceline{margin-top:12px;font-size:12px;color:#334155;font-family:ui-monospace,Menlo,monospace;line-height:1.8}
-.conf{color:var(--muted);font-size:11px}
-.subh{font-weight:700;font-size:12px;margin:12px 0 4px}
-.fineprint{color:var(--muted);font-size:11px;margin-top:10px}
-.covrow{padding:7px 0;font-size:12px;border-bottom:1px solid var(--line);line-height:1.7}
+ul.list b{color:var(--ink);font-weight:600}
+.tag{display:inline-block;background:var(--accent-dim);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font:500 10.5px var(--mono);letter-spacing:.02em;margin:0 4px;color:var(--accent2);text-transform:uppercase;vertical-align:middle}
+.lead{border-left:2px solid var(--accent);padding-left:14px;margin:10px 0;color:var(--muted)}
+.foot{color:var(--faint);font-size:11.5px;margin-top:30px;border-top:1px solid var(--line);padding-top:16px;line-height:1.7}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stat{background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:11px 13px}
+.stat b{display:block;font:600 16px var(--mono);color:var(--ink)}
+.stat span{display:block;margin-top:4px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.priceline{margin-top:14px;padding-top:13px;border-top:1px solid var(--line2);font:12px/1.9 var(--mono);color:var(--muted)}
+.conf{color:var(--faint);font:11px var(--mono)}
+.subh{font-weight:700;font-size:12px;color:var(--ink);margin:14px 0 4px;letter-spacing:.02em}
+.fineprint{color:var(--faint);font-size:11px;margin-top:12px}
+.covrow{padding:9px 0;font-size:12.5px;border-bottom:1px solid var(--line2);line-height:1.7;color:var(--muted)}
 .covrow:last-child{border:0}
 .covlabel{font-weight:700;margin-right:6px;white-space:nowrap}
-.cov-ok{color:var(--up)}.cov-mid{color:#b45309}.cov-out{color:var(--down)}
-.search{display:flex;gap:8px;margin:0 0 8px}
-.search input{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font:14px sans-serif}
-.search input:focus{outline:none;border-color:var(--accent)}
-.search button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:9px 16px;font:600 13px sans-serif;cursor:pointer}
-.searchmsg{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 8px}
-.searchnote{background:var(--soft);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:9px 12px;margin:0 0 16px;font-size:12px;color:#475569}
+.cov-ok{color:var(--up)}.cov-mid{color:var(--amber)}.cov-out{color:var(--down)}
+[hidden]{display:none!important}
+.hero{padding:8px 0}
+#home{min-height:62vh;display:flex;flex-direction:column;justify-content:center}
+.kicker{font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.hero h1{font-size:40px;margin:0 0 12px}
+.hero .sub{margin-bottom:22px}
+.hero .search{max-width:560px}
+.ftitle{display:flex;align-items:center;gap:9px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 16px}
+.ftitle::before{content:"";width:16px;height:1.5px;background:var(--accent);opacity:.7}
+.featured{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px}
+.fcard{appearance:none;display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;color:var(--ink);font-family:var(--sans);transition:border-color .15s,transform .15s,background .15s}
+.fcard:hover{border-color:var(--accent);background:var(--panel2);transform:translateY(-2px)}
+.fc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.fc-tkr{font:600 18px var(--mono);color:var(--accent2);letter-spacing:.02em}
+.fc-badge{font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid var(--line);background:var(--accent-dim);border-radius:5px;padding:2px 7px}
+.fc-name{font:600 15px var(--serif);color:var(--ink);margin:0 0 3px}
+.fc-meta{font:11px var(--mono);color:var(--muted);margin:0 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-stats{display:flex;gap:16px;font:600 13px var(--mono);color:var(--ink);border-top:1px solid var(--line2);padding-top:12px}
+.fc-stats .up{color:var(--up)}.fc-stats .down{color:var(--down)}
+.back{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--mono);letter-spacing:.02em;color:var(--muted);text-decoration:none;border:0;cursor:pointer;margin:0 0 22px}
+.back:hover{color:var(--accent2)}
+@media(max-width:560px){.wrap{padding:32px 16px 64px}h1,.hero h1{font-size:27px}h2.name{font-size:25px}.card{padding:16px}.featured{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Pivox Brief — Research Pack</h1>
+<section id="home">
+<div class="hero">
+<div class="kicker">Equity research · official filings only</div>
+<h1>Pivox Brief</h1>
 <p class="sub">One page of price-relevant factors from official filings — SEC EDGAR (US) &amp; Open DART (KR). A research starting point — not investment advice.</p>
 <form class="search" id="search"><input id="q" type="text" placeholder="Search any US ticker — e.g. TSLA, COST, PLTR" autocomplete="off" spellcheck="false"><button type="submit">Search</button></form>
 <div class="searchmsg" id="searchmsg"></div>
-<div class="sel" id="sel"></div>
+</div>
+</section>
+<section id="result" hidden>
+<a class="back" id="back" href="#">&larr; Search</a>
 <div id="pack"></div>
+</section>
 <div class="foot">US: SEC EDGAR (XBRL) · KR: Open DART · prices = demo only · news = headlines + links only · built for $0. Descriptive analysis, not investment advice / 투자자문이 아닙니다.</div>
 </div>
 <script>
@@ -354,30 +408,38 @@ function renderKO(p){
   if((p.sources||[]).length){const card=$('div','card');card.append($('h3',null,'출처'));const ul=$('ul','list');p.sources.forEach(s=>{const li=$('li');const m=String(s).match(/(https?:\\/\\/\\S+)/);li.innerHTML=m?esc(s.replace(m[1],''))+'<a href="'+esc(m[1])+'" target="_blank" rel="noopener">'+esc(m[1])+'</a>':esc(s);ul.append(li);});card.append(ul);box.append(card);}
 }
 
-function build(){
-  const sel=document.getElementById('sel');
-  DATA.forEach((p,i)=>{const b=$('button',i===0?'on':null,esc(p.ticker));b.onclick=()=>{document.querySelectorAll('.sel button').forEach(x=>x.classList.remove('on'));b.classList.add('on');render(p);};sel.append(b);});
-  if(DATA.length)render(DATA[0]);
-}
+const _home=document.getElementById('home'),_result=document.getElementById('result');
+function showHome(){_result.hidden=true;_home.hidden=false;document.title='Pivox Brief \\u2014 Research Pack';}
+function showResultView(){_home.hidden=true;_result.hidden=false;window.scrollTo(0,0);}
+function packByTicker(tk){tk=String(tk||'').toUpperCase();return DATA.find(p=>String(p.ticker).toUpperCase()===tk);}
 // --- search: fetch any US ticker live from the serverless backend ---
 const SEARCH_API=/^(localhost|127\\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'');
-async function doSearch(t){
-  t=(t||'').trim(); if(!t)return;
-  const msg=document.getElementById('searchmsg');
-  if(!SEARCH_API){msg.innerHTML='Live search needs the API deployed \\u2014 set <code>window.PIVOX_API_BASE</code> to your endpoint (see DEPLOY.md). Featured tickers above work offline.';return;}
-  msg.textContent='Searching '+t.toUpperCase()+'\\u2026';
+async function liveSearch(t){
+  const box=document.getElementById('pack');
+  if(!SEARCH_API){box.innerHTML='<div class="searchnote">Live lookup needs the API deployed \\u2014 set <code>window.PIVOX_API_BASE</code> (see DEPLOY.md). Featured tickers work offline.</div>';return;}
+  box.innerHTML='<p class="meta">Searching '+esc(t)+'\\u2026</p>';
   try{
     const r=await fetch(SEARCH_API+'/api/research?ticker='+encodeURIComponent(t));
     const d=await r.json();
-    if(!r.ok){msg.textContent=(d&&d.error)||('HTTP '+r.status);return;}
-    msg.textContent='';
-    document.querySelectorAll('.sel button').forEach(x=>x.classList.remove('on'));
-    render(d); window.scrollTo(0,0);
-  }catch(e){msg.textContent='Search failed: '+e.message;}
+    if(!r.ok){box.innerHTML='<div class="searchnote">'+esc((d&&d.error)||('HTTP '+r.status))+'</div>';return;}
+    render(d);
+  }catch(e){box.innerHTML='<div class="searchnote">Search failed: '+esc(e.message)+'</div>';}
 }
+function openTicker(tk,opts){
+  opts=opts||{};const TK=String(tk||'').toUpperCase().trim();if(!TK)return;
+  if(opts.push!==false)history.pushState({tk:TK},'','?ticker='+encodeURIComponent(TK));
+  document.title=TK+' \\u2014 Pivox Brief';
+  showResultView();
+  const p=packByTicker(TK);
+  if(p)render(p);else liveSearch(TK);
+}
+function route(){const tk=new URLSearchParams(location.search).get('ticker');if(tk)openTicker(tk,{push:false});else showHome();}
 const _sf=document.getElementById('search');
-if(_sf)_sf.addEventListener('submit',e=>{e.preventDefault();doSearch(document.getElementById('q').value);});
-build();
+if(_sf)_sf.addEventListener('submit',e=>{e.preventDefault();const v=document.getElementById('q').value.trim();if(v)openTicker(v);});
+const _bk=document.getElementById('back');
+if(_bk)_bk.addEventListener('click',e=>{e.preventDefault();history.pushState({},'',location.pathname);showHome();});
+window.addEventListener('popstate',route);
+route();
 </script>
 </body>
 </html>
