@@ -93,14 +93,27 @@ def build_kr_pack(query: str, year: int) -> Optional[KrResearchPack]:
     if ref is None:
         return None
 
-    profile = dart.company_profile(ref.corp_code) or DartProfile(
-        corp_code=ref.corp_code, corp_name=ref.corp_name, corp_name_eng="",
-        stock_code=ref.stock_code, industry_code="")
-    disc = dart.disclosures(ref.corp_code, limit=8)
-    periods = dart.annual_financials(ref.corp_code, year) or []
+    from concurrent.futures import ThreadPoolExecutor
 
     from engine.news import load_news
 
+    def _safe(fn, *a, **k):
+        try:
+            return fn(*a, **k)
+        except Exception:
+            return None
+
+    # corp_code is resolved; the four reads below are independent → fetch them in parallel
+    # (DART calls dominate KR latency). Each is guarded so one flaky read can't 500 the pack.
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        f_profile = ex.submit(_safe, dart.company_profile, ref.corp_code)
+        f_disc = ex.submit(_safe, dart.disclosures, ref.corp_code, limit=8)
+        f_fin = ex.submit(_safe, dart.annual_financials, ref.corp_code, year)
+        f_news = ex.submit(_safe, load_news, ref.stock_code or ref.corp_name)
+
+    profile = f_profile.result() or DartProfile(
+        corp_code=ref.corp_code, corp_name=ref.corp_name, corp_name_eng="",
+        stock_code=ref.stock_code, industry_code="")
     sources = [
         f"Open DART 공시뷰어 — https://dart.fss.or.kr (기업: {ref.corp_name}, 종목 {ref.stock_code})",
         "Open DART 정기보고서 재무정보 (fnlttSinglAcntAll)",
@@ -108,9 +121,9 @@ def build_kr_pack(query: str, year: int) -> Optional[KrResearchPack]:
     return KrResearchPack(
         query=query,
         profile=profile,
-        trend=build_trend_kr(periods),
-        disclosures=disc,
-        news=load_news(ref.stock_code or ref.corp_name),
+        trend=build_trend_kr(f_fin.result() or []),
+        disclosures=f_disc.result() or [],
+        news=f_news.result() or [],
         sources=sources,
     )
 

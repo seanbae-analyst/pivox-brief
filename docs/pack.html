@@ -137,6 +137,7 @@ const won=v=>{if(v==null)return '\u2014';const a=Math.abs(v);if(a>=1e12)return (
 const esc=s=>(s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const conf=c=>c==null?'':' <span class="conf">conf '+c+'</span>';
 const mult=v=>v==null?'\u2014':v+'\u00d7';
+const nmRoe=v=>v==null?'\u2014':(Math.abs(v)>100?'n/m':pct(v));
 
 function valuationCard(p){
   const q=p.quant; if(!q) return null;
@@ -146,7 +147,7 @@ function valuationCard(p){
   const stat=(label,val)=>{const s=$('div','stat');s.append($('b',null,val),$('span',null,label));return s;};
   const num=x=>x==null?'\u2014':x;
   [['Market cap',usd(v.market_cap)],['P/E (TTM)',mult(v.pe_ttm)],['P/S',mult(v.ps_ttm)],['P/B',mult(v.pb)],['EV/EBITDA',mult(v.ev_ebitda)],
-   ['FCF yield',pct(v.fcf_yield_pct)],['Div yield',pct(v.dividend_yield_pct)],['Buyback yield',pct(v.buyback_yield_pct)],['ROE',pct(pr.roe_pct)],
+   ['FCF yield',pct(v.fcf_yield_pct)],['Div yield',pct(v.dividend_yield_pct)],['Buyback yield',pct(v.buyback_yield_pct)],['ROE',nmRoe(pr.roe_pct)],
    ['Gross margin',pct(pr.gross_margin_ttm_pct)],['Oper margin',pct(pr.operating_margin_ttm_pct)],['Net margin',pct(pr.net_margin_ttm_pct)],['FCF margin',pct(pr.fcf_margin_pct)],
    ['Net debt',usd(h.net_debt)],['Debt/Equity',num(h.debt_to_equity)],['Current ratio',num(h.current_ratio)],['Shares YoY',pct(c.shares_yoy_pct,true)]
   ].forEach(([l,val])=>grid.append(stat(l,val)));
@@ -248,9 +249,9 @@ function peerCard(p){
   const subj={ticker:p.ticker,revenue:last.revenue,revenue_yoy_pct:last.revenue_yoy_pct,gross_margin:last.gross_margin,net_margin:last.net_margin,roe_pct:((p.quant||{}).profitability||{}).roe_pct};
   const card=$('div','card');card.append($('h3',null,'Peer comparison \u2014 same-sector (SEC XBRL)'));
   let h='<table><tr><th>Ticker</th><th class="num">Revenue</th><th class="num">Rev YoY</th><th class="num">Gross %</th><th class="num">Net %</th><th class="num">ROE</th></tr>';
-  [subj].concat(rows).forEach((r,i)=>{const y=r.revenue_yoy_pct;const hl=i===0?' style="background:var(--accent-dim)"':'';h+='<tr'+hl+'><td><b>'+esc(r.ticker)+'</b></td><td class="num">'+usd(r.revenue)+'</td><td class="num '+(y==null?'':y>=0?'up':'down')+'">'+pct(y,true)+'</td><td class="num">'+pct(r.gross_margin)+'</td><td class="num">'+pct(r.net_margin)+'</td><td class="num">'+pct(r.roe_pct)+'</td></tr>';});
+  [subj].concat(rows).forEach((r,i)=>{const y=r.revenue_yoy_pct;const hl=i===0?' style="background:var(--accent-dim)"':'';h+='<tr'+hl+'><td><b>'+esc(r.ticker)+'</b></td><td class="num">'+usd(r.revenue)+'</td><td class="num '+(y==null?'':y>=0?'up':'down')+'">'+pct(y,true)+'</td><td class="num">'+pct(r.gross_margin)+'</td><td class="num">'+pct(r.net_margin)+'</td><td class="num">'+nmRoe(r.roe_pct)+'</td></tr>';});
   h+='</table>';card.innerHTML+=h;
-  card.append($('p','fineprint','Latest reported quarter per issuer; periods may differ. Subject row highlighted \u00b7 US issuers (SEC XBRL).'));
+  card.append($('p','fineprint','Latest reported quarter per issuer; periods may differ \u00b7 ROE = n/m when capital structure (e.g. buybacks) distorts it \u00b7 US issuers (SEC XBRL).'));
   return card;
 }
 function marketContextCard(){
