@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dotenv import load_dotenv  # noqa: E402
 from engine import edgar  # noqa: E402
 from engine.research_pack import build_us_pack, to_page_dict  # noqa: E402
+from engine.market import build_market_context  # noqa: E402
 
 load_dotenv()  # EDGAR_USER_AGENT / DART_API_KEY from .env
 
@@ -84,7 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     DOCS.mkdir(parents=True, exist_ok=True)
     # Escape '<' so a stray '</script>' in inlined data can't break the page.
     payload = json.dumps(packs, ensure_ascii=False).replace("<", "\\u003c")
-    html = TEMPLATE.replace("__DATA__", payload)
+    market = json.dumps(build_market_context(), ensure_ascii=False).replace("<", "\\u003c")
+    html = TEMPLATE.replace("__DATA__", payload).replace("__MARKET__", market)
     out = DOCS / "pack.html"
     out.write_text(html, encoding="utf-8")
     print(f"Built {out}  ({len(html):,} bytes, {len(packs)} stock(s))")
@@ -213,6 +215,7 @@ ul.list b{color:var(--ink);font-weight:600}
 </div>
 <script>
 const DATA = __DATA__;
+const MARKET = __MARKET__;
 const $=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 const usd=v=>{if(v==null)return '\\u2014';const a=Math.abs(v);if(a>=1e9)return '$'+(v/1e9).toFixed(2)+'B';if(a>=1e6)return '$'+(v/1e6).toFixed(0)+'M';return '$'+v.toLocaleString();};
 const pct=(v,s)=>v==null?'\\u2014':(s&&v>=0?'+':'')+v.toFixed(1)+'%';
@@ -325,6 +328,36 @@ function fileRow(f){
   return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.primary_document||'filing')+'</a> \\u00b7 filed '+esc(f.filing_date)+lbl;
 }
 
+function marketContextCard(){
+  const M=MARKET; if(!M||(!M.rates&&!(M.positioning||[]).length&&!M.macro)) return null;
+  const card=$('div','card');card.append($('h3',null,'Market context \\u2014 as of '+esc(M.as_of||'')));
+  const r=M.rates;
+  if(r){
+    const sp=v=>v==null?'\\u2014':(v>=0?'+':'')+v.toFixed(2);
+    const pc=v=>v==null?'\\u2014':v.toFixed(2)+'%';
+    const pl=$('div','priceline');
+    pl.innerHTML='<b>Treasury curve</b> 3M '+pc(r.y3m)+' \\u00b7 2Y '+pc(r.y2)+' \\u00b7 10Y '+pc(r.y10)+' \\u00b7 30Y '+pc(r.y30)+' \\u00b7 10Y\\u20132Y '+sp(r.spread_10y_2y)+' ('+esc(r.curve||'')+')';
+    card.append(pl);
+  }
+  if(M.macro){
+    const m=M.macro;const grid=$('div','statgrid');
+    const stat=(l,v)=>{const s=$('div','stat');s.append($('b',null,v),$('span',null,l));return s;};
+    const fmt=o=>o==null?null:(o.value+(o.unit||''));
+    [['VIX',m.vix],['HY spread',m.hy_spread],['S&P 500',m.spx],['Nasdaq',m.nasdaq],['US dollar',m.dollar],['Fed funds',m.fed_funds],['Unemployment',m.unrate]].forEach(([l,o])=>{const v=fmt(o);if(v!=null)grid.append(stat(l,v));});
+    card.append(grid);
+  }
+  if((M.positioning||[]).length){
+    card.append($('div','subh','Speculative positioning \\u2014 CFTC CoT (net non-commercial)'));
+    const ul=$('ul','list');
+    M.positioning.forEach(p=>{
+      const cls=p.net>=0?'up':'down';const ar=p.net>=0?'\\u25b2':'\\u25bc';
+      const li=$('li');li.innerHTML='<span class="'+cls+'">'+ar+'</span> <b>'+esc(p.market)+'</b> <span class="'+cls+'">'+esc(p.stance)+' '+Math.abs(p.net).toLocaleString()+'</span> <span class="conf">contracts \\u00b7 '+esc(p.as_of)+'</span>';ul.append(li);
+    });
+    card.append(ul);
+  }
+  card.append($('p','fineprint','Market-wide context (not security-specific). '+esc(M.out_of_reach||'')));
+  return card;
+}
 function render(p){ return p.language==='ko' ? renderKO(p) : renderEN(p); }
 
 function renderEN(p){
@@ -340,6 +373,8 @@ function renderEN(p){
     [['Revenue',usd(last.revenue)],['Rev YoY',pct(last.revenue_yoy_pct,true)],['Gross margin',pct(last.gross_margin)],['Diluted EPS',last.eps_diluted!=null?'$'+last.eps_diluted.toFixed(2):'\\u2014']].forEach(([s,v])=>{const c=$('div','chip');c.append($('b',null,v),$('span',null,s+' \\u00b7 '+esc(last.period)));chips.append(c);});
   }
   box.append(chips);
+
+  {const mc=marketContextCard(); if(mc)box.append(mc);}
 
   if(t.length){
     const card=$('div','card');card.append($('h3',null,'Financial trend (quarterly, SEC XBRL)'));
@@ -387,6 +422,8 @@ function renderKO(p){
     [['매출액',won(last.revenue)],['매출 성장(YoY)',pct(last.revenue_yoy_pct,true)],['영업이익률',pct(last.operating_margin)],['순이익률',pct(last.net_margin)]].forEach(([s,v])=>{const c=$('div','chip');c.append($('b',null,v),$('span',null,s+' \\u00b7 '+esc(last.period)));chips.append(c);});
   }
   box.append(chips);
+
+  {const mc=marketContextCard(); if(mc)box.append(mc);}
 
   if(t.length){
     const card=$('div','card');card.append($('h3',null,'재무 추이 (연간, DART 정기보고서)'));
