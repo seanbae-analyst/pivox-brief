@@ -1,7 +1,11 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "outputDirectory": "docs",
-  "functions": {
-    "api/research.py": { "memory": 512, "maxDuration": 30 }
-  }
+  "builds": [
+    { "src": "api/research.py", "use": "@vercel/python", "config": { "includeFiles": "engine/**" } },
+    { "src": "docs/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/research", "dest": "/api/research.py" },
+    { "src": "/", "dest": "/docs/pack.html" },
+    { "src": "/(.*)", "dest": "/docs/$1" }
+  ]
 }
