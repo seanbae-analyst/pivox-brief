@@ -28,6 +28,9 @@ from urllib.parse import parse_qs, urlparse
 
 # 1–12 chars, ticker-shaped — reject junk before doing any (expensive) EDGAR work.
 _VALID_TICKER = re.compile(r"^[A-Za-z0-9.\-]{1,12}$")
+# KR query: a 6-digit KRX code or a Korean (Hangul) name → routed to Open DART.
+_HANGUL = re.compile(r"[가-힣]")
+_VALID_KR = re.compile(r"^[가-힣A-Za-z0-9 ().]{1,20}$")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -36,6 +39,10 @@ from engine.research_pack import build_us_pack, to_page_dict  # noqa: E402
 _SEARCH_NOTE = (
     "Searched ticker — live SEC EDGAR fundamentals, filings, insider activity & coverage. "
     "Price-based multiples and the AI Signal read are shown on featured tickers."
+)
+_SEARCH_NOTE_KR = (
+    "검색한 종목 — Open DART 공식 공시 기반 재무·공시. "
+    "가격·밸류에이션 배수와 AI 시그널은 featured 종목에 표시됩니다."
 )
 
 
@@ -52,6 +59,19 @@ def research(ticker: str) -> dict | None:
     d = to_page_dict(pack)
     d["searched"] = True
     d["search_note"] = _SEARCH_NOTE
+    return d
+
+
+def research_kr(query: str) -> dict | None:
+    """Live Open DART pack for a KR issuer (6-digit code or Korean name). Needs DART_API_KEY."""
+    from datetime import date
+    from engine.research_pack_kr import build_kr_pack, to_kr_page_dict
+    pack = build_kr_pack(query, year=date.today().year - 1)
+    if pack is None:
+        return None
+    d = to_kr_page_dict(pack)
+    d["searched"] = True
+    d["search_note"] = _SEARCH_NOTE_KR
     return d
 
 
@@ -77,6 +97,18 @@ class handler(BaseHTTPRequestHandler):  # Vercel Python entrypoint (class named 
         ticker = (query.get("ticker", [""])[0] or "").strip()
         if not ticker:
             return self._send(400, {"error": "missing ?ticker= (e.g. /api/research?ticker=NVDA)"})
+        # Route KR queries (6-digit KRX code or Korean name) to Open DART; everything else to EDGAR.
+        if _HANGUL.search(ticker) or (ticker.isdigit() and len(ticker) == 6):
+            if not _VALID_KR.match(ticker):
+                return self._send(400, {"error": "invalid KR query — 6-digit code or Korean name"})
+            try:
+                result = research_kr(ticker)
+            except Exception as exc:
+                print(f"[research_kr] error for {ticker!r}: {exc}", file=sys.stderr)
+                return self._send(502, {"error": "lookup failed"})
+            if result is None:
+                return self._send(404, {"error": "Open DART에서 조회되지 않는 종목입니다"})
+            return self._send(200, result)
         if not _VALID_TICKER.match(ticker):
             return self._send(400, {"error": "invalid ticker — 1–12 chars, letters/digits/.- only"})
         try:

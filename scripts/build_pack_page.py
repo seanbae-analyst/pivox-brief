@@ -174,9 +174,17 @@ ul.list b{color:var(--ink);font-weight:600}
 .cov-ok{color:var(--up)}.cov-mid{color:var(--amber)}.cov-out{color:var(--down)}
 [hidden]{display:none!important}
 .hero{padding:8px 0}
-#home{min-height:62vh;display:flex;flex-direction:column;justify-content:center}
+#home{position:relative;min-height:66vh;display:flex;flex-direction:column;justify-content:center}
+#home::before{content:"";position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:680px;max-width:88vw;height:360px;background:radial-gradient(ellipse at center,rgba(198,160,99,.10),transparent 70%);pointer-events:none;z-index:0}
+.hero{position:relative;z-index:1;animation:heroIn .5s ease both}
+@keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.hero{animation:none}}
+.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:18px}
+.examples .lbl{color:var(--faint);font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;margin-right:2px}
+.ex{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 13px;font:600 12px var(--mono);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.ex:hover{border-color:var(--accent);color:var(--accent2);background:var(--accent-dim)}
 .kicker{font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
-.hero h1{font-size:40px;margin:0 0 12px}
+.hero h1{font-size:46px;margin:0 0 14px}
 .hero .sub{margin-bottom:22px}
 .hero .search{max-width:560px}
 .ftitle{display:flex;align-items:center;gap:9px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 16px}
@@ -203,8 +211,9 @@ ul.list b{color:var(--ink);font-weight:600}
 <div class="kicker">Equity research · official filings only</div>
 <h1>Pivox Brief</h1>
 <p class="sub">One page of price-relevant factors from official filings — SEC EDGAR (US) &amp; Open DART (KR). A research starting point — not investment advice.</p>
-<form class="search" id="search"><input id="q" type="text" placeholder="Search any US ticker — e.g. TSLA, COST, PLTR" autocomplete="off" spellcheck="false"><button type="submit">Search</button></form>
+<form class="search" id="search"><input id="q" type="text" placeholder="Search US or KR — e.g. TSLA, MU, 005930, 카카오" autocomplete="off" spellcheck="false"><button type="submit">Search</button></form>
 <div class="searchmsg" id="searchmsg"></div>
+<div class="examples" id="examples"></div>
 </div>
 </section>
 <section id="result" hidden>
@@ -427,6 +436,7 @@ function renderKO(p){
   const box=document.getElementById('pack');box.innerHTML='';
   box.append($('h2','name',esc(p.name)+' <span style="color:var(--muted);font-weight:600">('+esc(p.ticker)+')</span>'));
   box.append($('p','meta',['KRX',esc(p.name_eng),'DART '+esc(p.cik)].filter(Boolean).join(' \\u00b7 ')));
+  if(p.search_note){box.append($('div','searchnote',esc(p.search_note)));}
 
   const t=p.trend||[];const last=t[t.length-1];
   const chips=$('div','chips');
@@ -482,12 +492,18 @@ function openTicker(tk,opts){
   const p=packByTicker(TK);
   if(p)render(p);else liveSearch(TK);
 }
+function buildExamples(){
+  const el=document.getElementById('examples'); if(!el) return;
+  el.innerHTML='<span class="lbl">try</span>';
+  ['NVDA','AAPL','MU','005930','000660'].forEach(tk=>{const b=$('button','ex',esc(tk));b.onclick=()=>openTicker(tk);el.append(b);});
+}
 function route(){const tk=new URLSearchParams(location.search).get('ticker');if(tk)openTicker(tk,{push:false});else showHome();}
 const _sf=document.getElementById('search');
 if(_sf)_sf.addEventListener('submit',e=>{e.preventDefault();const v=document.getElementById('q').value.trim();if(v)openTicker(v);});
 const _bk=document.getElementById('back');
 if(_bk)_bk.addEventListener('click',e=>{e.preventDefault();history.pushState({},'',location.pathname);showHome();});
 window.addEventListener('popstate',route);
+buildExamples();
 route();
 </script>
 </body>

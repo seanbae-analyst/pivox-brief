@@ -9,7 +9,7 @@ differ. The pure parts — trend derivation and the renderer — unit-test offli
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, is_dataclass
 from typing import Optional
 
 from engine import dart
@@ -34,6 +34,29 @@ class KrResearchPack:
     disclosures: list[Disclosure] = field(default_factory=list)
     news: list = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
+
+
+def to_kr_page_dict(pack: "KrResearchPack") -> dict:
+    """Serialise a KR pack into the page render dict (language='ko'). Shared by the
+    static builder (scripts/build_pack_page.py) and the live search API (api/research.py)."""
+    def _d(obj):
+        return asdict(obj) if is_dataclass(obj) else obj
+    p = pack.profile
+    return {
+        "language": "ko",
+        "ticker": p.stock_code or pack.query,
+        "name": p.corp_name,
+        "name_eng": p.corp_name_eng,
+        "exchanges": ["KRX"],
+        "cik": p.corp_code,                      # DART 고유번호 (rendered as "DART …")
+        "price": None,
+        "trend": [{"period": r.label, "revenue": r.revenue, "gross_margin": r.gross_margin,
+                   "operating_margin": r.operating_margin, "net_margin": r.net_margin,
+                   "revenue_yoy_pct": r.revenue_yoy_pct} for r in pack.trend],
+        "disclosures": [_d(d) for d in pack.disclosures],
+        "news": [_d(n) for n in pack.news],
+        "sources": pack.sources,
+    }
 
 
 # ── pure assembly ────────────────────────────────────────────────────────────
