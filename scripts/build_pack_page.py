@@ -351,30 +351,45 @@ function peerCard(p){
 }
 function marketContextCard(){
   const M=MARKET; if(!M||(!M.rates&&!(M.positioning||[]).length&&!M.macro)) return null;
-  const card=$('div','card');card.append($('h3',null,'Market context \\u2014 as of '+esc(M.as_of||'')));
+  const card=$('div','card');card.append($('h3',null,'Market psychology \\u2014 as of '+esc(M.as_of||'')));
   const r=M.rates;
   if(r){
     const sp=v=>v==null?'\\u2014':(v>=0?'+':'')+v.toFixed(2);
     const pc=v=>v==null?'\\u2014':v.toFixed(2)+'%';
+    const inv=(r.spread_10y_2y!=null&&r.spread_10y_2y<0);
     const pl=$('div','priceline');
-    pl.innerHTML='<b>Treasury curve</b> 3M '+pc(r.y3m)+' \\u00b7 2Y '+pc(r.y2)+' \\u00b7 10Y '+pc(r.y10)+' \\u00b7 30Y '+pc(r.y30)+' \\u00b7 10Y\\u20132Y '+sp(r.spread_10y_2y)+' ('+esc(r.curve||'')+')';
+    pl.innerHTML='<b>Rate regime</b> 3M '+pc(r.y3m)+' \\u00b7 2Y '+pc(r.y2)+' \\u00b7 10Y '+pc(r.y10)+' \\u00b7 30Y '+pc(r.y30)
+      +' \\u00b7 10Y\\u20132Y <span class="'+(inv?'down':'up')+'">'+sp(r.spread_10y_2y)+'</span> ('+esc(r.curve||'')+')'
+      +(r.real10!=null?' \\u00b7 real 10Y '+pc(r.real10):'')
+      +(r.breakeven10!=null?' \\u00b7 breakeven '+pc(r.breakeven10):'');
     card.append(pl);
   }
+  if((M.positioning||[]).length){
+    card.append($('div','subh','Cross-asset positioning \\u2014 CFTC CoT (speculative net \\u00b7 3y percentile)'));
+    let h='<table><tr><th>Market</th><th class="num">Net (spec)</th><th class="num">WoW</th><th class="num">3y %ile</th><th>signal</th></tr>';
+    M.positioning.forEach(p=>{
+      const nc=p.net>=0?'up':'down', wc=p.wow>=0?'up':'down';
+      const flag=p.extreme?'<span class="tag">'+esc(p.extreme)+'</span>':'';
+      h+='<tr><td><b>'+esc(p.market)+'</b> <span class="conf">'+esc(p.who)+'</span></td>'
+        +'<td class="num '+nc+'">'+(p.net>=0?'+':'')+Math.round(p.net).toLocaleString()+'</td>'
+        +'<td class="num '+wc+'">'+(p.wow>=0?'+':'')+Math.round(p.wow).toLocaleString()+'</td>'
+        +'<td class="num">'+(p.pctile==null?'\\u2014':p.pctile+'%')+'</td>'
+        +'<td>'+flag+'</td></tr>';
+    });
+    h+='</table>';card.innerHTML+=h;
+  }
+  if((M.regime||[]).length){
+    card.append($('div','subh','Regime read'));
+    const ul=$('ul','list');M.regime.forEach(s=>{const li=$('li');li.innerHTML=esc(s);ul.append(li);});card.append(ul);
+  }
   if(M.macro){
-    const m=M.macro;const grid=$('div','statgrid');
+    const m=M.macro;
+    card.append($('div','subh','Macro band \\u2014 FRED'));
+    const grid=$('div','statgrid');
     const stat=(l,v)=>{const s=$('div','stat');s.append($('b',null,v),$('span',null,l));return s;};
     const fmt=o=>o==null?null:(o.value+(o.unit||''));
-    [['VIX',m.vix],['HY spread',m.hy_spread],['S&P 500',m.spx],['Nasdaq',m.nasdaq],['US dollar',m.dollar],['Fed funds',m.fed_funds],['Unemployment',m.unrate]].forEach(([l,o])=>{const v=fmt(o);if(v!=null)grid.append(stat(l,v));});
+    [['VIX',m.vix],['HY spread',m.hy_spread],['S&P 500',m.spx],['Nasdaq',m.nasdaq],['US dollar',m.dollar],['Fin conditions',m.nfci],['Fed funds',m.fed_funds],['Unemployment',m.unrate]].forEach(([l,o])=>{const v=fmt(o);if(v!=null)grid.append(stat(l,v));});
     card.append(grid);
-  }
-  if((M.positioning||[]).length){
-    card.append($('div','subh','Speculative positioning \\u2014 CFTC CoT (net non-commercial)'));
-    const ul=$('ul','list');
-    M.positioning.forEach(p=>{
-      const cls=p.net>=0?'up':'down';const ar=p.net>=0?'\\u25b2':'\\u25bc';
-      const li=$('li');li.innerHTML='<span class="'+cls+'">'+ar+'</span> <b>'+esc(p.market)+'</b> <span class="'+cls+'">'+esc(p.stance)+' '+Math.abs(p.net).toLocaleString()+'</span> <span class="conf">contracts \\u00b7 '+esc(p.as_of)+'</span>';ul.append(li);
-    });
-    card.append(ul);
   }
   card.append($('p','fineprint','Market-wide context (not security-specific). '+esc(M.out_of_reach||'')));
   return card;
