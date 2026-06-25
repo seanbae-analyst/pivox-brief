@@ -328,6 +328,17 @@ function fileRow(f){
   return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.primary_document||'filing')+'</a> \\u00b7 filed '+esc(f.filing_date)+lbl;
 }
 
+function peerCard(p){
+  const rows=p.peers; if(!rows||!rows.length) return null;
+  const t=p.trend||[];const last=t[t.length-1]||{};
+  const subj={ticker:p.ticker,revenue:last.revenue,revenue_yoy_pct:last.revenue_yoy_pct,gross_margin:last.gross_margin,net_margin:last.net_margin,roe_pct:((p.quant||{}).profitability||{}).roe_pct};
+  const card=$('div','card');card.append($('h3',null,'Peer comparison \\u2014 same-sector (SEC XBRL)'));
+  let h='<table><tr><th>Ticker</th><th class="num">Revenue</th><th class="num">Rev YoY</th><th class="num">Gross %</th><th class="num">Net %</th><th class="num">ROE</th></tr>';
+  [subj].concat(rows).forEach((r,i)=>{const y=r.revenue_yoy_pct;const hl=i===0?' style="background:var(--accent-dim)"':'';h+='<tr'+hl+'><td><b>'+esc(r.ticker)+'</b></td><td class="num">'+usd(r.revenue)+'</td><td class="num '+(y==null?'':y>=0?'up':'down')+'">'+pct(y,true)+'</td><td class="num">'+pct(r.gross_margin)+'</td><td class="num">'+pct(r.net_margin)+'</td><td class="num">'+pct(r.roe_pct)+'</td></tr>';});
+  h+='</table>';card.innerHTML+=h;
+  card.append($('p','fineprint','Latest reported quarter per issuer; periods may differ. Subject row highlighted \\u00b7 US issuers (SEC XBRL).'));
+  return card;
+}
 function marketContextCard(){
   const M=MARKET; if(!M||(!M.rates&&!(M.positioning||[]).length&&!M.macro)) return null;
   const card=$('div','card');card.append($('h3',null,'Market context \\u2014 as of '+esc(M.as_of||'')));
@@ -385,6 +396,7 @@ function renderEN(p){
 
   {const vc=valuationCard(p); if(vc)box.append(vc);}
   {const qf=qualityCard(p); if(qf)box.append(qf);}
+  {const pcomp=peerCard(p); if(pcomp)box.append(pcomp);}
 
   const er=p.earnings_read||{};
   if(er.earnings_8k||er.latest_10q||er.latest_10k){
