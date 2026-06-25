@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Optional
 
 import requests
@@ -218,13 +219,32 @@ def _get_bytes(path: str, **params) -> bytes:
 
 
 _corp_cache: Optional[list[CorpRef]] = None
+# Listed-only corpCode slim map, bundled into the deployment so serverless cold starts don't
+# download + parse the full corpCode.xml ZIP (~100k entries) from DART on every invocation.
+# Build/refresh it with: python scripts/build_corp_map.py
+_BUNDLED_CORPS = Path(os.environ.get(
+    "DART_CORPCODE_PATH",
+    str(Path(__file__).resolve().parent.parent / "data" / "dart_corp_listed.json"),
+))
+
+
+def _load_bundled_corps() -> Optional[list[CorpRef]]:
+    try:
+        if _BUNDLED_CORPS.exists():
+            import json as _json
+            rows = _json.loads(_BUNDLED_CORPS.read_text(encoding="utf-8"))
+            return [CorpRef(corp_code=r["c"], corp_name=r["n"], stock_code=r["s"]) for r in rows]
+    except Exception:
+        pass
+    return None
 
 
 def resolve_corp(query: str) -> Optional[CorpRef]:
-    """Resolve a KRX ticker / company name to a CorpRef (corpCode.xml, cached)."""
+    """Resolve a KRX ticker / company name to a CorpRef. Prefers the bundled listed-only map
+    (instant, no network); falls back to the full corpCode.xml ZIP from DART. Cached."""
     global _corp_cache
     if _corp_cache is None:
-        _corp_cache = parse_corp_codes(_get_bytes("corpCode.xml"))
+        _corp_cache = _load_bundled_corps() or parse_corp_codes(_get_bytes("corpCode.xml"))
     return match_corp(_corp_cache, query)
 
 

@@ -1,6 +1,6 @@
 {
   "builds": [
-    { "src": "api/research.py", "use": "@vercel/python", "config": { "includeFiles": "engine/**" } },
+    { "src": "api/research.py", "use": "@vercel/python", "config": { "includeFiles": ["engine/**", "data/dart_corp_listed.json"] } },
     { "src": "docs/**", "use": "@vercel/static" }
   ],
   "routes": [
