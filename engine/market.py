@@ -82,16 +82,25 @@ def _rates() -> dict | None:
 
 
 # ── CFTC positioning with 3-year percentile (crowding) ───────────────────────────
-# (label, url, market LIKE, long_field, short_field, who, note)
+# (label, url, market LIKE, spec_long, spec_short, who, note, inst_long, inst_short)
+# spec = the tactical crowd (TFF leveraged-money / legacy non-commercial); inst = TFF asset
+# managers (real-money institutions) where available → enables a fast-money-vs-institutions read.
+_AML, _AMS = "asset_mgr_positions_long", "asset_mgr_positions_short"
+_LL, _LS = "lev_money_positions_long", "lev_money_positions_short"
+_NL, _NS = "noncomm_positions_long_all", "noncomm_positions_short_all"
 _MARKETS = [
-    ("S&P 500", _TFF, "E-MINI S&P 500 -%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "broad equity risk appetite"),
-    ("Nasdaq 100", _TFF, "NASDAQ MINI%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "growth/tech risk appetite"),
-    ("Russell 2000", _TFF, "RUSSELL E-MINI%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "small-cap / risk-on breadth"),
-    ("VIX", _TFF, "VIX FUTURES%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "net short = complacency, net long = fear/hedging"),
-    ("UST 10Y", _TFF, "ULTRA UST 10Y%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "duration / rate-cut bets"),
-    ("Bitcoin", _TFF, "BITCOIN - CHICAGO MERCANTILE%", "lev_money_positions_long", "lev_money_positions_short", "lev funds", "speculative risk appetite"),
-    ("Gold", _LEGACY, "GOLD - COMMODITY EXCHANGE%", "noncomm_positions_long_all", "noncomm_positions_short_all", "non-comm", "safe-haven demand"),
-    ("Crude oil", _LEGACY, "CRUDE OIL, LIGHT SWEET-WTI%", "noncomm_positions_long_all", "noncomm_positions_short_all", "non-comm", "growth / inflation"),
+    ("S&P 500", _TFF, "E-MINI S&P 500 -%", _LL, _LS, "lev funds", "broad equity risk appetite", _AML, _AMS),
+    ("Nasdaq 100", _TFF, "NASDAQ MINI%", _LL, _LS, "lev funds", "growth/tech risk appetite", _AML, _AMS),
+    ("Russell 2000", _TFF, "RUSSELL E-MINI%", _LL, _LS, "lev funds", "small-cap / risk-on breadth", _AML, _AMS),
+    ("VIX", _TFF, "VIX FUTURES%", _LL, _LS, "lev funds", "net short = complacency, net long = fear/hedging", _AML, _AMS),
+    ("UST 10Y", _TFF, "ULTRA UST 10Y%", _LL, _LS, "lev funds", "duration / rate-cut bets", _AML, _AMS),
+    ("Japanese yen", _TFF, "JAPANESE YEN%", _LL, _LS, "lev funds", "risk-off / carry unwind", _AML, _AMS),
+    ("Euro FX", _TFF, "EURO FX%", _LL, _LS, "lev funds", "USD alternative", _AML, _AMS),
+    ("Bitcoin", _TFF, "BITCOIN - CHICAGO MERCANTILE%", _LL, _LS, "lev funds", "speculative risk appetite", _AML, _AMS),
+    ("Gold", _LEGACY, "GOLD - COMMODITY EXCHANGE%", _NL, _NS, "non-comm", "safe-haven demand", None, None),
+    ("Silver", _LEGACY, "SILVER%", _NL, _NS, "non-comm", "precious / industrial", None, None),
+    ("Copper", _LEGACY, "COPPER-%", _NL, _NS, "non-comm", "global growth (Dr. Copper)", None, None),
+    ("Crude oil", _LEGACY, "CRUDE OIL, LIGHT SWEET-WTI%", _NL, _NS, "non-comm", "growth / inflation", None, None),
 ]
 
 
@@ -104,10 +113,11 @@ def _pctile(value: float, series: list[float]) -> int | None:
 def _positioning() -> list[dict]:
     cutoff = (date.today() - timedelta(days=1100)).isoformat()  # ~3 years of weekly history
     out: list[dict] = []
-    for label, url, pat, lf, sf, who, note in _MARKETS:
+    for label, url, pat, lf, sf, who, note, ilf, isf in _MARKETS:
         try:
+            sel = f"report_date_as_yyyy_mm_dd,{lf},{sf}" + (f",{ilf},{isf}" if ilf else "")
             params = {
-                "$select": f"report_date_as_yyyy_mm_dd,{lf},{sf}",
+                "$select": sel,
                 "$where": f"market_and_exchange_names like '{pat}' AND report_date_as_yyyy_mm_dd > '{cutoff}'",
                 "$order": "report_date_as_yyyy_mm_dd ASC",
                 "$limit": 200,
@@ -133,10 +143,15 @@ def _positioning() -> list[dict]:
                     extreme = "crowded long"
                 elif pct <= 10:
                     extreme = "crowded short"
+            inst_net = None
+            if ilf and rows:
+                il, ish = _f(rows[-1].get(ilf)), _f(rows[-1].get(isf))
+                if il is not None and ish is not None:
+                    inst_net = int(il - ish)
             out.append({
                 "market": label, "net": net, "wow": net - prev, "pctile": pct,
                 "lo": min(nets), "hi": max(nets), "as_of": as_of, "who": who,
-                "note": note, "extreme": extreme,
+                "note": note, "extreme": extreme, "inst_net": inst_net,
                 "stance": "net long" if net >= 0 else "net short",
             })
         except Exception:
@@ -168,6 +183,14 @@ def _regime_read(rates: dict | None, pos: list[dict]) -> list[str]:
             out.append(f"S&P 500 spec positioning crowded long ({spx['pctile']} %ile, 3y) — bullish consensus / euphoria risk.")
         elif spx["pctile"] <= 20:
             out.append(f"S&P 500 spec positioning washed out ({spx['pctile']} %ile, 3y) — bearish consensus / contrarian setup.")
+    for mk in ("S&P 500", "VIX", "Nasdaq 100"):
+        p = by.get(mk)
+        if p and p.get("inst_net") is not None and p.get("net") is not None and (p["net"] >= 0) != (p["inst_net"] >= 0):
+            out.append(
+                f"Positioning split on {mk}: hedge funds net {'long' if p['net'] >= 0 else 'short'} "
+                f"({p['net']:,}) vs asset managers net {'long' if p['inst_net'] >= 0 else 'short'} "
+                f"({p['inst_net']:,}) — fast money and institutions disagree."
+            )
     extremes = [p for p in pos if p.get("extreme")]
     if extremes:
         out.append("Crowded trades flagged: " + ", ".join(f"{p['market']} ({p['extreme']})" for p in extremes) + " — extremes (≥90th/≤10th %ile) often precede reversals.")
