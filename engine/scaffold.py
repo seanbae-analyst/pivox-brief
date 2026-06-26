@@ -112,6 +112,25 @@ def build_scaffold(record: dict, max_items: int = 7) -> Optional[dict]:
                 "question": f"Is the peer-extreme {f.get('label', '').lower()} structural, or cyclical vs peers?",
             })
 
+    # 6) Disclosure-cadence shift (Δ-time event — behavior leads disclosure).
+    cad = record.get("eight_k_cadence") or {}
+    if cad.get("pace") == "elevated":
+        items.append({
+            "area": "Disclosure cadence",
+            "signal": f"8-K filing pace elevated — {cad.get('count_ttm')} in 12mo vs {cad.get('count_prior_ttm')} prior",
+            "question": "What's driving the pickup in material-event filings — and is it a leading tell?",
+        })
+
+    # 7) Management-tone shift across quarters (MD&A lexical-density trajectory).
+    tt = record.get("tone_trajectory") or {}
+    if tt.get("net_tone_direction") in ("rising", "falling"):
+        d = tt["net_tone_direction"]
+        items.append({
+            "area": "Management tone",
+            "signal": f"MD&A net tone {d} across quarters (Loughran-McDonald word density)",
+            "question": "Does the language shift lead the numbers, or just echo the last print?",
+        })
+
     if not items:
         return None
     return {

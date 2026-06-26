@@ -51,6 +51,8 @@ class ResearchPack:
     ownership: Optional[dict] = None    # engine.ownership.ownership_block (insider Form 4 + 13D/G)
     quality_flags: Optional[list] = None  # engine.quality_flags (earnings-quality observations)
     risk_delta: Optional[dict] = None   # engine.risk_delta (10-K Item 1A YoY change)
+    eight_k_cadence: Optional[dict] = None  # engine.cadence (8-K disclosure cadence, Wave 3)
+    tone_trajectory: Optional[dict] = None  # engine.tone_trajectory (MD&A tone across quarters, Wave 3)
 
 
 # ── pure assembly ────────────────────────────────────────────────────────────
@@ -158,6 +160,7 @@ def _language_for(exchanges: list[str]) -> str:
 # ── I/O entry point ──────────────────────────────────────────────────────────
 def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
                   with_ownership: bool = True, with_risk_delta: bool = True,
+                  with_tone_trajectory: bool = True,
                   insider_max_filings: int = 20) -> Optional[ResearchPack]:
     """Resolve a US ticker/name via EDGAR and assemble its research pack.
 
@@ -215,6 +218,29 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
         except Exception:
             risk_delta_block = None
 
+    # 8-K disclosure cadence (Wave 3) — one extra submissions read, filtered to 8-Ks for a
+    # longer window than the 8-filing earnings read carries. Cheap; never block the pack on it.
+    eightk_cadence = None
+    try:
+        from engine.cadence import eight_k_cadence
+
+        _, eightk_filings = edgar.company_filings(ref.cik, forms=("8-K",), limit=40)
+        eightk_cadence = eight_k_cadence(eightk_filings)
+    except Exception:
+        eightk_cadence = None
+
+    # Management-tone trajectory (Wave 3) — fetches the last few 10-Q/10-K MD&As (several large
+    # documents), so it's gated for latency-sensitive callers (e.g. the search backend).
+    tone_traj = None
+    if with_tone_trajectory:
+        try:
+            from engine.tone_trajectory import tone_trajectory as _tone_trajectory
+
+            _, periodic = edgar.company_filings(ref.cik, forms=("10-Q", "10-K"), limit=6)
+            tone_traj = _tone_trajectory(periodic, max_docs=4)
+        except Exception:
+            tone_traj = None
+
     from engine.news import load_news
     from engine.qualitative import load_qualitative
 
@@ -236,6 +262,8 @@ def build_us_pack(query: str, n_quarters: int = 8, with_price: bool = True,
         ownership=ownership,
         quality_flags=quality,
         risk_delta=risk_delta_block,
+        eight_k_cadence=eightk_cadence,
+        tone_trajectory=tone_traj,
     )
 
 
@@ -369,6 +397,16 @@ def render_markdown(pack: ResearchPack) -> str:
         lines.append("_No recent filings on file._")
     lines.append("")
 
+    # 8-K event cadence (Wave 3) — disclosure rhythm + event-type mix (Δ-time signal)
+    cad = pack.eight_k_cadence
+    if cad:
+        lines.append("## 8-K event cadence")
+        for o in cad["observations"]:
+            lines.append(f"- {o}")
+        lines.append("")
+        lines.append(f"_{cad['note']}_")
+        lines.append("")
+
     # News & catalysts — headline + link only (§4); no article text reproduced
     lines.append("## News & catalysts")
     if pack.news:
@@ -403,6 +441,16 @@ def render_markdown(pack: ResearchPack) -> str:
                 lines.append(f"- {r['summary']}")
         lines.append("")
         lines.append("_Themes mapped to a fixed vocabulary; paraphrased from official filings (no verbatim text, §1)._")
+        lines.append("")
+
+    # Management-tone trajectory (Wave 3) — Loughran-McDonald lexical density across quarters
+    tt = pack.tone_trajectory
+    if tt:
+        lines.append("## Management-tone trajectory (MD&A, across quarters)")
+        for o in tt["observations"]:
+            lines.append(f"- {o}")
+        lines.append("")
+        lines.append(f"_{tt['note']} Method: {tt['method']}._")
         lines.append("")
 
     # Risk-factor delta — what changed in 10-K Item 1A year over year
@@ -451,7 +499,8 @@ def render_markdown(pack: ResearchPack) -> str:
     from engine.scaffold import build_scaffold
 
     _scaf = build_scaffold({"qualitative": pack.qualitative, "quality_flags": pack.quality_flags,
-                            "risk_delta": pack.risk_delta, "ownership": pack.ownership})
+                            "risk_delta": pack.risk_delta, "ownership": pack.ownership,
+                            "eight_k_cadence": pack.eight_k_cadence, "tone_trajectory": pack.tone_trajectory})
     if _scaf:
         lines.append("## Research agenda")
         for it in _scaf["items"]:
@@ -526,12 +575,21 @@ def coverage_manifest(pack: ResearchPack) -> dict:
         covered.append("Earnings-quality flags — accruals, cash conversion, margin/growth trajectory")
     if pack.risk_delta:
         covered.append("Risk-factor delta — 10-K Item 1A year-over-year (added/removed risks)")
+    if pack.eight_k_cadence:
+        covered.append("8-K event cadence — disclosure rhythm + event-type mix (trailing 12mo)")
+    if pack.tone_trajectory:
+        covered.append("Management-tone trajectory — MD&A lexical density across quarters (Loughran-McDonald)")
     if pack.qualitative or pack.quality_flags:
         covered.append("Research agenda — synthesized drivers + open questions (scaffold)")
     partial = [
         "Management commentary — headline + link only (transcripts / interviews are copyrighted)",
         "Regulatory / legal / litigation events — via filings + headlines",
         "Short interest — US biweekly (FINRA); not yet wired",
+        "Institutional 13F flow (accumulation / distribution) — structurally hard for a keyless "
+        "tool: requires a CUSIP reverse-index across thousands of 13F filers (no per-issuer EDGAR "
+        "index); documented gap, not scraped (DATA_SOURCES.md posture)",
+        "Guidance-vs-actual — guidance figures live in 8-K exhibit text (EX-99.1), fragile to "
+        "parse $0; deferred (the qualitative read captures guidance direction where given)",
     ]
     if not (own.get("insider_transactions") or own.get("large_holder_filings")):
         partial.append("Insider / large-holder activity (Form 4, 13D/G) — not wired for this issuer")
@@ -601,6 +659,8 @@ def to_record(pack: ResearchPack) -> dict:
         "ownership": pack.ownership,       # insider Form 4 + large-holder 13D/G
         "quality_flags": pack.quality_flags,  # earnings-quality observations (refined signal)
         "risk_delta": pack.risk_delta,     # 10-K Item 1A YoY change
+        "eight_k_cadence": pack.eight_k_cadence,  # 8-K disclosure cadence (Wave 3)
+        "tone_trajectory": pack.tone_trajectory,  # MD&A tone across quarters (Wave 3)
         "coverage": coverage_manifest(pack),
         "sources": pack.sources,
         "disclaimer": (
@@ -641,6 +701,8 @@ def to_page_dict(pack: ResearchPack) -> dict:
         "ownership": pack.ownership,
         "quality_flags": pack.quality_flags,
         "risk_delta": pack.risk_delta,
+        "eight_k_cadence": pack.eight_k_cadence,  # 8-K disclosure cadence (Wave 3)
+        "tone_trajectory": pack.tone_trajectory,  # MD&A tone across quarters (Wave 3)
         "coverage": coverage_manifest(pack),
         "sources": pack.sources,
     }

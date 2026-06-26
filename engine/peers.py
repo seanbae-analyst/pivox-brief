@@ -32,7 +32,8 @@ def _snapshot(tk: str) -> dict | None:
         return _CACHE[tk]
     snap = None
     try:
-        pack = build_us_pack(tk, with_price=False, with_risk_delta=False, insider_max_filings=0)
+        pack = build_us_pack(tk, with_price=False, with_risk_delta=False,
+                             with_tone_trajectory=False, insider_max_filings=0)
         if pack is not None:
             d = to_page_dict(pack)
             trend = d.get("trend") or []

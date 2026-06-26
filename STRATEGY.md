@@ -75,12 +75,18 @@ genuine research tool rather than a signal-seller.
 
 ## Roadmap
 
-- **Wave 1 (building now):** earnings-quality flags · risk-factor delta · insider patterns.
+- **Wave 1 ✅ done:** earnings-quality flags · risk-factor delta · insider patterns.
   (Δ-time + behavioral processing on data we already pull — fastest path to "this is different.")
-- **Wave 2:** peer-relative percentiles (SIC peer set) · macro-exposure tags × FRED ·
-  guidance-vs-actual tracking.
-- **Wave 3:** tone/theme trajectory across quarters · 13F flow deltas · the **research-scaffold**
-  synthesis ("N things + open questions") · 8-K event cadence.
+- **Wave 2 ✅ done:** peer-relative percentiles (SIC peer set) · macro-exposure tags × FRED.
+- **Wave 3 ✅ done:** the **research-scaffold** synthesis ("N things + open questions",
+  `engine/scaffold.py`) · **8-K event cadence** (`engine/cadence.py` — disclosure rhythm + event
+  mix, Δ-time) · **management-tone trajectory across quarters** (`engine/tone_trajectory.py` —
+  Loughran-McDonald lexical density on MD&A, auditable, descriptive).
+  - **Documented gaps (honest, not built):** *13F institutional flow Δ* — structurally hard for a
+    keyless tool (needs a CUSIP reverse-index across thousands of 13F filers; no per-issuer EDGAR
+    index) → kept as a 🟡 coverage gap, not scraped. *Guidance-vs-actual* — guidance figures live in
+    8-K exhibit text (EX-99.1), fragile to parse $0 → deferred; the qualitative read still captures
+    guidance *direction* where given. (Both surfaced in the coverage manifest.)
 
 ## Bottom line
 

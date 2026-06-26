@@ -49,11 +49,13 @@ _SEARCH_NOTE_KR = (
 def research(ticker: str) -> dict | None:
     """Live EDGAR pack for an arbitrary US ticker (no demo price; cloud-safe).
 
-    Skips the risk-factor delta (it fetches two full 10-Ks → too slow for a request) and caps the
-    insider Form-4 fetches (a per-request fan-out / SEC-rate-limit risk on a public endpoint). The
-    earnings-quality flags stay (they're free — already-fetched XBRL).
+    Skips the risk-factor delta (two full 10-Ks) and the tone trajectory (several full 10-Q MD&As)
+    — both too slow for a request — and caps the insider Form-4 fetches (a per-request fan-out /
+    SEC-rate-limit risk on a public endpoint). Earnings-quality flags + 8-K cadence stay (cheap:
+    already-fetched XBRL / one submissions read).
     """
-    pack = build_us_pack(ticker, with_price=False, with_risk_delta=False, insider_max_filings=5)
+    pack = build_us_pack(ticker, with_price=False, with_risk_delta=False,
+                         with_tone_trajectory=False, insider_max_filings=5)
     if pack is None:
         return None
     d = to_page_dict(pack)
