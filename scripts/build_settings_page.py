@@ -70,7 +70,8 @@ const CFG = __CFG__, THEMES = __THEMES__;
 const LEVELS = ["초보","보통","고수"];
 let sel = new Set(CFG.default.themes), level = CFG.default.explain_level;
 const live = CFG.url && CFG.key;
-if(!live) document.getElementById('warn').style.display='block';
+const local = !live && (location.hostname==='localhost'||location.hostname==='127.0.0.1');
+if(!live && !local) document.getElementById('warn').style.display='block';
 
 function renderThemes(){
   document.getElementById('themes').innerHTML = THEMES.map(t=>
@@ -91,18 +92,19 @@ function renderLevels(){
     level=b.dataset.l; renderLevels();
   });
 }
+function apply(s){if(s){sel=new Set(s.themes||[...sel]);level=s.explain_level||level;
+  document.getElementById('custom').value=(s.custom||[]).join(', ');}}
 async function loadCurrent(){
   if(live){
     try{
       const r=await fetch(`${CFG.url}/rest/v1/brief_settings?id=eq.default&select=*`,
         {headers:{apikey:CFG.key,Authorization:'Bearer '+CFG.key}});
-      const rows=await r.json();
-      if(rows&&rows[0]){sel=new Set(rows[0].themes||[]);level=rows[0].explain_level||level;
-        document.getElementById('custom').value=(rows[0].custom||[]).join(', ');}
+      const rows=await r.json(); if(rows&&rows[0]) apply(rows[0]);
     }catch(e){}
+  }else if(local){
+    try{const r=await fetch('/load'); apply(await r.json());}catch(e){}
   }else{
-    try{const s=JSON.parse(localStorage.getItem('pivox_wl')||'null');
-      if(s){sel=new Set(s.themes);level=s.explain_level;document.getElementById('custom').value=(s.custom||[]).join(', ');}}catch(e){}
+    try{apply(JSON.parse(localStorage.getItem('pivox_wl')||'null'));}catch(e){}
   }
   renderThemes();renderLevels();
 }
@@ -118,6 +120,12 @@ document.getElementById('save').onclick=async()=>{
         headers:{apikey:CFG.key,Authorization:'Bearer '+CFG.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
         body:JSON.stringify(body)});
       msg.textContent = r.ok ? '✅ 저장됐어요! 내일 아침 브리핑부터 반영돼요.' : '저장 실패 ('+r.status+')';
+    }catch(e){msg.textContent='저장 실패: '+e;}
+  }else if(local){
+    msg.textContent='저장 중…';
+    try{
+      const r=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      msg.textContent = r.ok ? '✅ 저장됐어요! 다음 브리핑부터 반영돼요.' : '저장 실패 ('+r.status+')';
     }catch(e){msg.textContent='저장 실패: '+e;}
   }else{
     localStorage.setItem('pivox_wl',JSON.stringify(body));
