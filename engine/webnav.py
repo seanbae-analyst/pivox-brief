@@ -7,8 +7,7 @@ explicit .html paths so they work on both Vercel and GitHub Pages.
 from __future__ import annotations
 
 _LINKS = [
-    ("brief", "/brief.html", "📊 브리핑"),
-    ("research", "/pack.html", "🔍 리서치"),
+    ("home", "/", "📊 오늘의 시장"),
     ("settings", "/settings.html", "⚙️ 설정"),
 ]
 

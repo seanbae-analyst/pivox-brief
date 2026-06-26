@@ -88,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     market = json.dumps(build_market_context(), ensure_ascii=False).replace("<", "\\u003c")
     from engine.webnav import nav
     html = (TEMPLATE.replace("__DATA__", payload).replace("__MARKET__", market)
-            .replace("<body>", "<body>" + nav("research")))
+            .replace("<body>", "<body>" + nav("home")))
     out = DOCS / "pack.html"
     out.write_text(html, encoding="utf-8")
     print(f"Built {out}  ({len(html):,} bytes, {len(packs)} stock(s))")

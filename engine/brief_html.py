@@ -265,5 +265,5 @@ def render_page(b: dict) -> str:
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f'<title>시장심리 브리핑 — {_esc(b.get("as_of"))}</title>'
         f'<meta name="description" content="매일 아침 시장심리 브리핑 — {_esc(b.get("headline",""))}">'
-        f'</head><body style="margin:0;background:{_BG};">{nav("brief")}{inner}</body></html>'
+        f'</head><body style="margin:0;background:{_BG};">{nav("home")}{inner}</body></html>'
     )

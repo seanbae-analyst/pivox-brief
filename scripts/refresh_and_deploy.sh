@@ -30,6 +30,7 @@ fi
 #    without GMAIL_APP_PASSWORD/SENDGRID). Never blocks the refresh.
 ./venv/bin/python scripts/brief.py --send --web --quiet || echo "brief step failed (non-fatal)"
 ./venv/bin/python scripts/build_settings_page.py || echo "settings page failed (non-fatal)"
+./venv/bin/python scripts/inject_home.py || echo "home inject failed (non-fatal)"  # brief → top of pack home
 
 # 4. commit + push -> GitHub Pages auto-refreshes (pack + brief + settings)
 if [ -n "$(git status --porcelain docs/pack.html docs/brief.html docs/settings.html)" ]; then
