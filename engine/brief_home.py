@@ -41,6 +41,21 @@ def _table(rows):
     return f'<table style="width:100%;border-collapse:collapse;">{body}</table>'
 
 
+def _spark(vals, col, w=108, h=22):
+    """Tiny SVG trendline of recent closes (web only — email strips SVG)."""
+    if not vals or len(vals) < 3:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    n = len(vals)
+    pts = " ".join(f"{round(j / (n - 1) * w, 1)},{round(h - (v - lo) / rng * (h - 3) - 1.5, 1)}"
+                   for j, v in enumerate(vals))
+    return (f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'style="display:block;margin-top:7px;overflow:visible;">'
+            f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="1.5" '
+            f'stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/></svg>')
+
+
 def _hot_chips(items):
     cells = ""
     for i in items:
@@ -49,7 +64,8 @@ def _hot_chips(items):
         bd = _col(x) + "33"
         cells += (f'<div style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
-                  f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div></div>')
+                  f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div>'
+                  f'{_spark(i.get("spark"), _col(x))}</div>')
     return (f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px;">{cells}</div>')
 
 
