@@ -41,19 +41,50 @@ def _table(rows):
     return f'<table style="width:100%;border-collapse:collapse;">{body}</table>'
 
 
-def _spark(vals, col, w=108, h=22):
-    """Tiny SVG trendline of recent closes (web only — email strips SVG)."""
+def _spark(vals, col, w=108, h=24):
+    """Tiny SVG trendline of recent closes — area fill + end dot (web only; email strips SVG)."""
     if not vals or len(vals) < 3:
         return ""
     lo, hi = min(vals), max(vals)
     rng = (hi - lo) or 1.0
     n = len(vals)
-    pts = " ".join(f"{round(j / (n - 1) * w, 1)},{round(h - (v - lo) / rng * (h - 3) - 1.5, 1)}"
-                   for j, v in enumerate(vals))
+    co = [(round(j / (n - 1) * w, 1), round(h - (v - lo) / rng * (h - 6) - 3, 1)) for j, v in enumerate(vals)]
+    line = " ".join(f"{x},{y}" for x, y in co)
+    area = f"0,{h} " + line + f" {w},{h}"
+    ex, ey = co[-1]
     return (f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
-            f'style="display:block;margin-top:7px;overflow:visible;">'
-            f'<polyline points="{pts}" fill="none" stroke="{col}" stroke-width="1.5" '
-            f'stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/></svg>')
+            f'style="display:block;margin-top:8px;overflow:visible;">'
+            f'<polygon points="{area}" fill="{col}" opacity="0.09"/>'
+            f'<polyline points="{line}" fill="none" stroke="{col}" stroke-width="1.5" '
+            f'stroke-linejoin="round" stroke-linecap="round" opacity="0.95"/>'
+            f'<circle cx="{ex}" cy="{ey}" r="2.1" fill="{col}"/></svg>')
+
+
+def _stat_strip(b: dict) -> str:
+    """Bloomberg-style mono ticker strip of the key indices + VIX, right under the masthead."""
+    sectors = b.get("sectors") or {}
+    us = {i["label"]: i for i in sectors.get("us") or []}
+    kr = {i["label"]: i for i in sectors.get("kr") or []}
+    flow = {f["label"]: f for f in (b.get("daily_flow") or [])}
+    cells = ""
+    pairs = [("S&P 500", us.get("S&P 500")), ("나스닥", us.get("나스닥")),
+             ("코스피", kr.get("코스피")), ("코스닥", kr.get("코스닥"))]
+    for lbl, src in pairs:
+        if not src or src.get("chg5_pct") is None:
+            continue
+        x = src["chg5_pct"]
+        cells += (f'<div style="flex:1;min-width:88px;padding:10px 14px;border-right:1px solid {_LINE};">'
+                  f'<div style="font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:{_SUB};">{_esc(lbl)}</div>'
+                  f'<div style="font-size:15px;font-weight:600;color:{_col(x)};{_MONO}margin-top:3px;">{_arr(x)} {x:+.1f}%</div></div>')
+    vix = flow.get("VIX")
+    if vix and vix.get("value") is not None:
+        cells += (f'<div style="flex:1;min-width:88px;padding:10px 14px;">'
+                  f'<div style="font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:{_SUB};">VIX</div>'
+                  f'<div style="font-size:15px;font-weight:600;color:{_INK};{_MONO}margin-top:3px;">{vix["value"]:.1f}</div></div>')
+    if not cells:
+        return ""
+    return (f'<div style="display:flex;flex-wrap:wrap;border:1px solid {_LINE};border-radius:12px;'
+            f'overflow:hidden;background:#111827;margin:0 0 18px;">{cells}</div>')
 
 
 def _hot_chips(items):
@@ -77,26 +108,32 @@ def render_home_cards(b: dict) -> str:
 
     # ── masthead — editorial Playfair tagline + dated kicker ──
     P.append(
-        f'<div style="padding:4px 2px 18px;">'
-        f'<div style="font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:{_ACCENT};">'
+        f'<div style="padding:4px 2px 20px;">'
+        f'<div style="font:600 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:{_ACCENT};">'
         f'시장심리 브리핑 · {_esc(b.get("as_of"))} 아침</div>'
-        f'<div style="font-family:var(--serif);font-weight:600;font-size:27px;color:{_INK};margin-top:8px;line-height:1.22;">'
+        f'<div style="font-family:var(--serif);font-weight:600;font-size:31px;color:{_INK};margin-top:10px;line-height:1.18;letter-spacing:.01em;">'
         f'Market psychology,<br>distilled every morning.</div>'
+        f'<div style="height:2px;width:48px;background:{_ACCENT};opacity:.8;margin-top:16px;border-radius:1px;"></div>'
         f'</div>'
     )
+    P.append(_stat_strip(b))
 
     # ── 오늘의 시장 (mood + headline + 쉬운 풀이 + 그래서 뭐) ──
     m = b.get("mood")
     P.append('<div class="card"><h3>오늘의 시장</h3>')
     if b.get("guide") and m:
         col = _MOOD_COL.get(m["level"], _SUB)
-        dots = "".join(
-            f'<span style="display:inline-block;width:30px;height:6px;border-radius:3px;margin-right:4px;'
-            f'background:{col if i <= m["level"] else "#334155"};"></span>' for i in range(1, 6))
+        pos = round((m["level"] - 1) / 4 * 100)
+        bar = (
+            f'<div style="position:relative;height:8px;border-radius:5px;margin:9px 0 16px;'
+            f'background:linear-gradient(90deg,#7AA0C8,#86a8a0,#d4a558,#cf9050,#cf6b6b);">'
+            f'<div style="position:absolute;top:-4px;left:{pos}%;width:16px;height:16px;border-radius:50%;'
+            f'background:{col};border:3px solid #111827;transform:translateX(-50%);box-shadow:0 0 0 1px {col}cc;"></div></div>'
+        )
         P.append(f'<div style="font-size:15px;font-weight:700;color:{col};margin-bottom:2px;">'
                  f'{m["emoji"]} 시장 기분: {_esc(m["label"])} '
                  f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {m["level"]} · {_esc(m["note"])}</span></div>'
-                 f'<div style="margin:6px 0 14px;">{dots}</div>')
+                 f'{bar}')
     P.append(f'<div style="display:inline-block;background:{rbg};color:{rcol};font-weight:700;'
              f'font-size:18px;padding:8px 14px;border-radius:8px;letter-spacing:-.2px;border:1px solid {rcol}44;">{_esc(risk)}</div>')
     if b.get("plain"):
@@ -109,7 +146,7 @@ def render_home_cards(b: dict) -> str:
     # ── 🔥 핫 종목 ──
     us_hot, kr_hot = b.get("us_hot") or [], b.get("kr_hot") or []
     if us_hot or kr_hot:
-        P.append('<div class="card"><h3>🔥 핫 종목 · 오늘 제일 많이 움직인</h3>')
+        P.append('<div class="card"><h3>핫 종목 · 오늘 제일 많이 움직인</h3>')
         if us_hot:
             P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:0 0 6px;">🇺🇸 미국</div>{_hot_chips(us_hot)}')
         if kr_hot:
@@ -138,7 +175,7 @@ def render_home_cards(b: dict) -> str:
     # ── 📖 배우기 (초보) ──
     if b.get("teach"):
         tod = b.get("term_of_day")
-        P.append('<div class="card"><h3>📖 배우기</h3>')
+        P.append('<div class="card"><h3>배우기</h3>')
         if tod:
             ana = f'<div style="font-size:13px;color:{_SUB};margin-top:5px;">비유: {_esc(tod["analogy"])}</div>' if tod.get("analogy") else ""
             P.append(f'<div style="background:{_UP_BG};border-radius:10px;padding:12px 14px;">'
