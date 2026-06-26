@@ -256,18 +256,12 @@ def render_html(b: dict) -> str:
 def render_page(b: dict) -> str:
     """Standalone web page wrapping the brief — written to docs/brief.html, served at /brief.html.
     Same body the email uses, so the web view and the inbox view never drift."""
+    from engine.webnav import nav
     inner = render_html(b)
-    nav = (
-        f'<div style="max-width:600px;margin:0 auto;padding:14px 12px 0;'
-        f'font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;color:{_SUB};">'
-        f'<a href="/" style="color:{_DN};text-decoration:none;">← 리서치팩</a>'
-        f'<a href="/settings.html" style="color:{_DN};text-decoration:none;margin-left:14px;">⚙️ 설정</a>'
-        f'<span style="float:right;">매일 아침 자동 갱신 · 정보 제공용</span></div>'
-    )
     return (
         '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f'<title>시장심리 브리핑 — {_esc(b.get("as_of"))}</title>'
         f'<meta name="description" content="매일 아침 시장심리 브리핑 — {_esc(b.get("headline",""))}">'
-        f'</head><body style="margin:0;background:{_BG};">{nav}{inner}</body></html>'
+        f'</head><body style="margin:0;background:{_BG};">{nav("brief")}{inner}</body></html>'
     )

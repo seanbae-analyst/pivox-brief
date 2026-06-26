@@ -86,7 +86,9 @@ def main(argv: list[str] | None = None) -> int:
     # Escape '<' so a stray '</script>' in inlined data can't break the page.
     payload = json.dumps(packs, ensure_ascii=False).replace("<", "\\u003c")
     market = json.dumps(build_market_context(), ensure_ascii=False).replace("<", "\\u003c")
-    html = TEMPLATE.replace("__DATA__", payload).replace("__MARKET__", market)
+    from engine.webnav import nav
+    html = (TEMPLATE.replace("__DATA__", payload).replace("__MARKET__", market)
+            .replace("<body>", "<body>" + nav("research")))
     out = DOCS / "pack.html"
     out.write_text(html, encoding="utf-8")
     print(f"Built {out}  ({len(html):,} bytes, {len(packs)} stock(s))")
@@ -538,7 +540,6 @@ function packByTicker(tk){tk=String(tk||'').toUpperCase();return DATA.find(p=>St
 const SEARCH_API=/^(localhost|127\\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'');
 async function liveSearch(t){
   const box=document.getElementById('pack');
-  if(!SEARCH_API){box.innerHTML='<div class="searchnote">Live lookup needs the API deployed \\u2014 set <code>window.PIVOX_API_BASE</code> (see DEPLOY.md). Featured tickers work offline.</div>';return;}
   box.innerHTML='<p class="meta">Searching '+esc(t)+'\\u2026</p>';
   try{
     const r=await fetch(SEARCH_API+'/api/research?ticker='+encodeURIComponent(t));

@@ -109,7 +109,7 @@ ul.list b{color:var(--ink);font-weight:600}
 @media(max-width:560px){.wrap{padding:32px 16px 64px}h1,.hero h1{font-size:27px}h2.name{font-size:25px}.card{padding:16px}.featured{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
+<body><div style="background:#fff;border-bottom:1px solid #e6e8ec;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;"><div style="max-width:960px;margin:0 auto;padding:0 16px;display:flex;gap:20px;align-items:center;"><a href="/brief.html" style="color:#15171c;text-decoration:none;font-weight:800;font-size:16px;letter-spacing:-.3px;padding:13px 0;margin-right:4px;">Pivox</a><a href="/brief.html" style="color:#5b6470;text-decoration:none;font-weight:500;font-size:14px;padding:14px 2px;border-bottom:2px solid transparent;">📊 브리핑</a><a href="/pack.html" style="color:#15171c;text-decoration:none;font-weight:800;font-size:14px;padding:14px 2px;border-bottom:2px solid #1f6feb;">🔍 리서치</a><a href="/settings.html" style="color:#5b6470;text-decoration:none;font-weight:500;font-size:14px;padding:14px 2px;border-bottom:2px solid transparent;">⚙️ 설정</a></div></div>
 <div class="wrap">
 <section id="home">
 <div class="hero">
@@ -427,7 +427,7 @@ function packByTicker(tk){tk=String(tk||'').toUpperCase();return DATA.find(p=>St
 const SEARCH_API=/^(localhost|127\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'');
 async function liveSearch(t){
   const box=document.getElementById('pack');
-  if(!SEARCH_API){box.innerHTML='<div class="searchnote">Live lookup needs the API deployed \u2014 set <code>window.PIVOX_API_BASE</code> (see DEPLOY.md). Featured tickers work offline.</div>';return;}
+  
   box.innerHTML='<p class="meta">Searching '+esc(t)+'\u2026</p>';
   try{
     const r=await fetch(SEARCH_API+'/api/research?ticker='+encodeURIComponent(t));

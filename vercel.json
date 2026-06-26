@@ -5,7 +5,8 @@
   ],
   "routes": [
     { "src": "/api/research", "dest": "/api/research.py" },
-    { "src": "/", "dest": "/docs/pack.html" },
+    { "src": "/", "dest": "/docs/brief.html" },
+    { "src": "/research", "dest": "/docs/pack.html" },
     { "src": "/(.*)", "dest": "/docs/$1" }
   ]
 }

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.themes import THEMES  # noqa: E402
 from engine.watchlist import DEFAULT  # noqa: E402
+from engine.webnav import nav  # noqa: E402
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "settings.html"
 
@@ -51,9 +52,8 @@ input.tx{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px
 .save:disabled{background:#9bb6e0}
 .msg{text-align:center;font-size:13px;margin-top:10px;min-height:18px}
 .warn{background:#fdf6e3;border:1px solid #f0e0b0;border-radius:10px;padding:11px 13px;font-size:13px;color:#7a5c10;margin-bottom:14px}
-a{color:var(--accent)}.nav{font-size:12px;margin-bottom:6px}
-</style></head><body><div class="wrap">
-<div class="nav"><a href="/brief.html">← 오늘 브리핑</a></div>
+a{color:var(--accent)}
+</style></head><body>__NAV__<div class="wrap">
 <h1>브리핑 설정</h1><p class="sub">내가 보고 싶은 테마·종목·설명 수준을 고르면 내일 아침 브리핑부터 반영돼요.</p>
 <div id="warn" class="warn" style="display:none">⚠️ 아직 저장소(Supabase)가 연결 안 됐어요. 고른 건 이 브라우저에만 임시 저장돼요.</div>
 <div class="sec">📌 테마 (보고 싶은 것 체크)</div>
@@ -135,5 +135,7 @@ document.getElementById('save').onclick=async()=>{
 loadCurrent();
 </script></body></html>"""
 
-OUT.write_text(HTML.replace("__CFG__", cfg).replace("__THEMES__", themes_js), encoding="utf-8")
+OUT.write_text(
+    HTML.replace("__CFG__", cfg).replace("__THEMES__", themes_js).replace("__NAV__", nav("settings")),
+    encoding="utf-8")
 print(f"wrote {OUT}  (supabase={'on' if os.environ.get('SUPABASE_URL') else 'off'})")
