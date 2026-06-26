@@ -6,10 +6,12 @@ that inherit pack.html's existing CSS (.card, table, badges), injected by script
 """
 from __future__ import annotations
 
-_UP, _DN, _FLAT = "#5ec08a", "#e26d60", "#8b919b"
-_UP_BG, _DN_BG = "#15241d", "#261718"
-_INK, _SUB, _ACCENT, _LINE = "#ECEAE3", "#8b919b", "#c6a063", "#1f2329"
-_MOOD_COL = {1: "#5ec08a", 2: "#8fb56a", 3: "#c6a063", 4: "#d6a44f", 5: "#e26d60"}
+_UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#94a3b8"
+_UP_BG, _DN_BG = "#2a1c1f", "#17222e"
+_INK, _SUB, _ACCENT, _LINE = "#e2e8f0", "#94a3b8", "#d4a558", "#334155"
+_FEAR = "#cf6b6b"  # risk-off / fear (semantic, distinct from price up/down)
+# mood thermometer calm → fear (cool blue → gold → warm red)
+_MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#d4a558", 4: "#cf9050", 5: "#cf6b6b"}
 
 
 def _esc(s) -> str:
@@ -43,7 +45,7 @@ def _hot_chips(items):
     cells = ""
     for i in items:
         x = i.get("chg1_pct")
-        bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#161a20")
+        bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#1e293b")
         bd = _col(x) + "33"
         cells += (f'<div style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
@@ -53,8 +55,8 @@ def _hot_chips(items):
 
 def render_home_cards(b: dict) -> str:
     risk = b.get("headline", "")
-    rcol = _DN if "회피" in risk else (_UP if "선호" in risk else _SUB)
-    rbg = _DN_BG if "회피" in risk else (_UP_BG if "선호" in risk else "#161a20")
+    rcol = _FEAR if "회피" in risk else (_UP if "선호" in risk else _SUB)
+    rbg = "#2a1a1a" if "회피" in risk else (_UP_BG if "선호" in risk else "#1e293b")
     P = []
 
     # ── masthead — editorial Playfair tagline + dated kicker ──
@@ -74,7 +76,7 @@ def render_home_cards(b: dict) -> str:
         col = _MOOD_COL.get(m["level"], _SUB)
         dots = "".join(
             f'<span style="display:inline-block;width:30px;height:6px;border-radius:3px;margin-right:4px;'
-            f'background:{col if i <= m["level"] else "#1f2329"};"></span>' for i in range(1, 6))
+            f'background:{col if i <= m["level"] else "#334155"};"></span>' for i in range(1, 6))
         P.append(f'<div style="font-size:15px;font-weight:700;color:{col};margin-bottom:2px;">'
                  f'{m["emoji"]} 시장 기분: {_esc(m["label"])} '
                  f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {m["level"]} · {_esc(m["note"])}</span></div>'
@@ -129,7 +131,7 @@ def render_home_cards(b: dict) -> str:
                      f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>{ana}</div>')
         if b.get("glossary"):
             chips = "".join(
-                f'<span style="display:inline-block;background:#161a20;border-radius:8px;padding:5px 10px;'
+                f'<span style="display:inline-block;background:#1e293b;border-radius:8px;padding:5px 10px;'
                 f'margin:6px 6px 0 0;font-size:12px;color:{_INK};"><b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
                 for x in b["glossary"])
             P.append(f'<div style="line-height:1.9;margin-top:4px;">{chips}</div>')

@@ -106,11 +106,11 @@ TEMPLATE = """<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0a0b0d;--panel:#101317;--panel2:#161a20;--soft:#161a20;
-  --ink:#ECEAE3;--muted:#8b919b;--faint:#5f656e;
+  --bg:#0a0e17;--panel:#111827;--panel2:#1e293b;--soft:#1e293b;
+  --ink:#e2e8f0;--muted:#94a3b8;--faint:#64748b;
   --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.05);
-  --accent:#c6a063;--accent2:#dcb979;--accent-dim:rgba(198,160,99,.13);
-  --up:#5ec08a;--down:#e26d60;--amber:#d6a44f;
+  --accent:#d4a558;--accent2:#d4a558;--accent-dim:rgba(212,165,88,.13);
+  --up:#D18888;--down:#7AA0C8;--amber:#d6a44f;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --serif:"Playfair Display",Georgia,"Times New Roman",serif;
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -126,7 +126,7 @@ h1{font:600 30px/1.15 var(--serif);margin:0 0 6px;letter-spacing:.01em}
 .search input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font:14px var(--sans);color:var(--ink)}
 .search input::placeholder{color:var(--faint)}
 .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
-.search button{border:1px solid var(--accent);background:var(--accent);color:#0a0b0d;border-radius:10px;padding:11px 20px;font:600 13px var(--sans);cursor:pointer;transition:filter .15s}
+.search button{border:1px solid var(--accent);background:var(--accent);color:#0a0e17;border-radius:10px;padding:11px 20px;font:600 13px var(--sans);cursor:pointer;transition:filter .15s}
 .search button:hover{filter:brightness(1.08)}
 .searchmsg{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 8px}
 .searchnote{background:var(--accent-dim);border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:10px;padding:10px 14px;margin:0 0 18px;font-size:12.5px;color:var(--ink)}
@@ -143,6 +143,7 @@ h2.name span{color:var(--accent)!important;font-family:var(--mono)!important;fon
 .chip b{display:block;font:600 19px var(--mono);color:var(--ink);letter-spacing:-.01em}
 .chip span{display:block;margin-top:4px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
+.card{transition:border-color .2s ease,box-shadow .2s ease}.card:hover{border-color:rgba(212,165,88,.32);box-shadow:0 0 0 1px rgba(212,165,88,.06)}
 .card h3{display:flex;align-items:center;gap:9px;margin:0 0 16px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--accent2)}
 .card h3::before{content:"";width:16px;height:1.5px;background:var(--accent);opacity:.7}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -177,7 +178,7 @@ ul.list b{color:var(--ink);font-weight:600}
 [hidden]{display:none!important}
 .hero{padding:8px 0}
 #home{position:relative;min-height:66vh;display:flex;flex-direction:column;justify-content:center}
-#home::before{content:"";position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:680px;max-width:88vw;height:360px;background:radial-gradient(ellipse at center,rgba(198,160,99,.10),transparent 70%);pointer-events:none;z-index:0}
+#home::before{content:"";position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:680px;max-width:88vw;height:360px;background:radial-gradient(ellipse at center,rgba(212,165,88,.10),transparent 70%);pointer-events:none;z-index:0}
 .hero{position:relative;z-index:1;animation:heroIn .5s ease both}
 @keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.hero{animation:none}}

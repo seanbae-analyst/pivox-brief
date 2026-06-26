@@ -16,18 +16,18 @@ def nav(active: str) -> str:
     items = []
     for key, href, label in _LINKS:
         on = key == active
-        color = "#ECEAE3" if on else "#8b919b"
+        color = "#e2e8f0" if on else "#94a3b8"
         weight = "800" if on else "500"
-        bb = "border-bottom:2px solid #c6a063;" if on else "border-bottom:2px solid transparent;"
+        bb = "border-bottom:2px solid #d4a558;" if on else "border-bottom:2px solid transparent;"
         items.append(
             f'<a href="{href}" style="color:{color};text-decoration:none;font-weight:{weight};'
             f'font-size:14px;padding:14px 2px;{bb}">{label}</a>'
         )
     return (
-        '<div style="background:#0a0b0d;border-bottom:1px solid #1f2329;'
+        '<div style="background:#0a0e17;border-bottom:1px solid #334155;'
         'font-family:-apple-system,BlinkMacSystemFont,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;">'
         '<div style="max-width:960px;margin:0 auto;padding:0 16px;display:flex;gap:20px;align-items:center;">'
-        '<a href="/" style="color:#c6a063;text-decoration:none;font-weight:800;font-size:16px;'
+        '<a href="/" style="color:#d4a558;text-decoration:none;font-weight:800;font-size:16px;'
         'letter-spacing:.5px;padding:13px 0;margin-right:4px;">PIVOX</a>'
         + "".join(items)
         + '</div></div>'
