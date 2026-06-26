@@ -23,12 +23,34 @@ from __future__ import annotations
 import csv
 import io
 import os
+import time
 from datetime import date, timedelta
 
 import requests
 
 _UA = {"User-Agent": "Mozilla/5.0 (compatible; pivox-brief/1.0; research-pack)"}
 _TIMEOUT = 25
+_FRED_OBS_URL = "https://api.stlouisfed.org/fred/series/observations"
+
+
+def _fred_obs(key: str, sid: str, limit: int) -> list[dict] | None:
+    """FRED observations with retry + exponential backoff. Returns the raw observation
+    list, or None when every attempt failed (429/5xx/timeout) — callers MUST distinguish
+    None (fetch died, keep prior value) from [] (genuinely empty series). Without this,
+    a single FRED hiccup silently blanked the freshest layer of the whole brief."""
+    params = {"series_id": sid, "api_key": key, "file_type": "json",
+              "sort_order": "desc", "limit": limit}
+    for attempt in range(4):
+        try:
+            r = requests.get(_FRED_OBS_URL, params=params, headers=_UA, timeout=_TIMEOUT)
+            if r.status_code == 429 or r.status_code >= 500:
+                raise requests.HTTPError(f"FRED {r.status_code}")
+            r.raise_for_status()
+            return r.json().get("observations", [])
+        except Exception:
+            if attempt < 3:
+                time.sleep(0.6 * (2 ** attempt))  # 0.6 / 1.2 / 2.4s
+    return None
 
 _TFF = "https://publicreporting.cftc.gov/resource/gpe5-46if.json"     # Traders in Financial Futures
 _LEGACY = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"  # legacy futures-only (commodities)
@@ -259,20 +281,12 @@ _KR_SERIES = [
 def _fred_fetch(key: str, series: list[tuple]) -> dict | None:
     out: dict = {}
     for fld, sid, label, unit in series:
-        try:
-            r = requests.get(
-                "https://api.stlouisfed.org/fred/series/observations",
-                params={"series_id": sid, "api_key": key, "file_type": "json",
-                        "sort_order": "desc", "limit": 1},
-                headers=_UA, timeout=_TIMEOUT,
-            )
-            r.raise_for_status()
-            obs = r.json().get("observations", [])
-            val = _f(obs[0].get("value")) if obs else None
-            if val is not None:
-                out[fld] = {"value": val, "as_of": obs[0]["date"], "label": label, "unit": unit}
-        except Exception:
+        obs = _fred_obs(key, sid, 1)
+        if not obs:
             continue
+        val = _f(obs[0].get("value"))
+        if val is not None:
+            out[fld] = {"value": val, "as_of": obs[0]["date"], "label": label, "unit": unit}
     return out or None
 
 
@@ -297,23 +311,13 @@ _FLOW_SERIES = [
 
 
 def _fred_history(key: str, sid: str, n: int = 45) -> list[tuple[str, float]]:
-    try:
-        r = requests.get(
-            "https://api.stlouisfed.org/fred/series/observations",
-            params={"series_id": sid, "api_key": key, "file_type": "json",
-                    "sort_order": "desc", "limit": n},
-            headers=_UA, timeout=_TIMEOUT,
-        )
-        r.raise_for_status()
-        ser = []
-        for o in r.json().get("observations", []):
-            v = _f(o.get("value"))
-            if v is not None:
-                ser.append((o["date"], v))
-        ser.reverse()  # ascending
-        return ser
-    except Exception:
+    obs = _fred_obs(key, sid, n)
+    if not obs:
         return []
+    ser = [(o["date"], _f(o.get("value"))) for o in obs]
+    ser = [(d, v) for d, v in ser if v is not None]
+    ser.reverse()  # ascending
+    return ser
 
 
 def _daily_flow() -> list[dict] | None:
@@ -331,14 +335,17 @@ def _daily_flow() -> list[dict] | None:
         def back(nb: int) -> float | None:
             return ser[-1 - nb][1] if len(ser) > nb else None
 
-        b5, b20 = back(5), back(20)
+        b1, b5, b20 = back(1), back(5), back(20)
         if kind == "pct":
+            item["chg1_pct"] = round(100 * (last - b1) / b1, 1) if b1 else None
             item["chg5_pct"] = round(100 * (last - b5) / b5, 1) if b5 else None
             item["chg20_pct"] = round(100 * (last - b20) / b20, 1) if b20 else None
         elif kind == "bp":
+            item["chg1_bp"] = round(100 * (last - b1)) if b1 is not None else None
             item["chg5_bp"] = round(100 * (last - b5)) if b5 is not None else None
             item["chg20_bp"] = round(100 * (last - b20)) if b20 is not None else None
         else:  # level (VIX)
+            item["chg1"] = round(last - b1, 2) if b1 is not None else None
             item["chg5"] = round(last - b5, 2) if b5 is not None else None
             item["chg20"] = round(last - b20, 2) if b20 is not None else None
         out.append(item)
