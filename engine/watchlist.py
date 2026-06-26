@@ -14,9 +14,12 @@ from engine.themes import THEMES
 
 _PATH = Path(__file__).resolve().parent.parent / "data" / "watchlist.json"
 
+_LEVELS = ("초보", "보통", "고수")  # how much hand-holding the brief gives
+
 DEFAULT = {
     "themes": ["ai_semi", "battery_ev", "bigtech", "platform_kr"],
-    "custom": [],   # list of bare symbols, e.g. ["TSLA", "005930.KS"]
+    "custom": [],          # list of bare symbols, e.g. ["TSLA", "005930.KS"]
+    "explain_level": "초보",  # 주린이 default — max explanation
 }
 
 
@@ -25,7 +28,8 @@ def load() -> dict:
         d = json.loads(_PATH.read_text(encoding="utf-8"))
         themes = [t for t in d.get("themes", []) if t in THEMES] or DEFAULT["themes"]
         custom = [s for s in d.get("custom", []) if isinstance(s, str) and s.strip()]
-        return {"themes": themes, "custom": custom}
+        level = d.get("explain_level") if d.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
+        return {"themes": themes, "custom": custom, "explain_level": level}
     except Exception:
         return dict(DEFAULT)
 
@@ -33,9 +37,11 @@ def load() -> dict:
 def save(wl: dict) -> None:
     themes = [t for t in wl.get("themes", []) if t in THEMES]
     custom = [s.strip() for s in wl.get("custom", []) if isinstance(s, str) and s.strip()]
+    level = wl.get("explain_level") if wl.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
     _PATH.parent.mkdir(parents=True, exist_ok=True)
-    _PATH.write_text(json.dumps({"themes": themes, "custom": custom}, ensure_ascii=False, indent=2),
-                     encoding="utf-8")
+    _PATH.write_text(
+        json.dumps({"themes": themes, "custom": custom, "explain_level": level}, ensure_ascii=False, indent=2),
+        encoding="utf-8")
 
 
 def resolve(wl: dict | None = None) -> list[tuple[str, str]]:

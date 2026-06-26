@@ -17,8 +17,10 @@ import json
 from datetime import date
 from pathlib import Path
 
+from engine.glossary import glosses_for, mood, term_of_day
 from engine.market import _daily_flow, _positioning, _rates, _regime_read
 from engine.sectors import build_sectors
+from engine.watchlist import load as load_watchlist
 
 _STATE = Path(__file__).resolve().parent.parent / "data" / "brief_state.json"
 
@@ -110,6 +112,27 @@ def _kr_read(kr: list[dict], kr_hot: list[dict] | None = None) -> str | None:
     return f"코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}% — 방향이 엇갈림."
 
 
+_SOWHAT = {
+    1: "시장이 차분해서 급할 거 없는 분위기예요.",
+    2: "평범한 날 — 큰 이벤트는 없어요.",
+    3: "슬슬 경계감이 도는 구간, 변동성이 커질 수 있어요.",
+    4: "투자자들이 겁먹은 상태 — 초보는 무리한 추격매수보다 관망이 보통이에요.",
+    5: "강한 공포 구간 — 평소보다 크게 출렁일 수 있으니 더 조심스럽게 보세요.",
+}
+
+
+def _sowhat(m: dict) -> str:
+    return _SOWHAT.get(m["level"], "")
+
+
+def _terms_today(headline: str, rates: dict | None) -> list[str]:
+    """Which jargon to gloss for a beginner today — the terms that actually appear."""
+    terms = ["위험회피" if "회피" in headline else "위험선호", "VIX", "크레딧 스프레드", "변동성"]
+    if (rates or {}).get("curve") == "inverted":
+        terms.append("수익률 커브")
+    return terms
+
+
 def _load_state() -> dict:
     try:
         return json.loads(_STATE.read_text(encoding="utf-8"))
@@ -160,10 +183,18 @@ def build_brief(lang: str = "ko") -> dict:
     sectors = build_sectors()
     prior = _load_state()
 
+    level = load_watchlist().get("explain_level", "초보")
+    teach = level == "초보"     # all 5 levers
+    guide = level in ("초보", "보통")  # thermometer + so-what
+
     pos_ds = [p["days_old"] for p in positioning if p.get("days_old") is not None]
     lag = min(pos_ds) if pos_ds else None
     as_of = (flow_list[0]["as_of"] if flow_list else None) or (rates or {}).get("as_of") or str(date.today())
     headline = _tilt(flow)
+    the_mood = mood(flow_list, rates)
+    tod = term_of_day(as_of)
+    glossary = glosses_for(_terms_today(headline, rates))
+    sowhat = _sowhat(the_mood)
     regime = _regime_read(rates, positioning, flow_list)
     extremes = [p for p in positioning if p.get("extreme") and not p.get("basis")]
     alerts = detect_alerts(flow, rates, positioning, prior)
@@ -201,10 +232,14 @@ def build_brief(lang: str = "ko") -> dict:
     L: list[str] = []
     L.append(f"📊 시장심리 브리핑 — {as_of} 아침")
     L.append("")
+    if guide:
+        L.append(f"오늘 시장 기분: {the_mood['emoji']} {the_mood['label']} (5단계 중 {the_mood['level']}) — {the_mood['note']}")
     L.append(f"오늘 한 줄: {headline}")
     plain = _plain_headline(headline)
     if plain:
         L.append(f"쉬운 풀이: {plain}")
+    if guide and sowhat:
+        L.append(f"그래서 뭐?: {sowhat}")
     if alerts:
         L.append("")
         L.append("🚨 큰 움직임:")
@@ -251,6 +286,18 @@ def build_brief(lang: str = "ko") -> dict:
         L.append("")
         L.append(f"⚠️ 주목: {watch}")
 
+    # ── 📖 배우기 (초보 모드) — 용어 풀이 + 오늘의 용어 ──
+    if teach:
+        L.append("")
+        L.append("━━ 📖 배우기 ━━")
+        if tod:
+            line = f"오늘의 용어: {tod['term']} — {tod['long']}"
+            if tod.get("analogy"):
+                line += f" (비유: {tod['analogy']})"
+            L.append(line)
+        if glossary:
+            L.append("용어 풀이: " + " · ".join(f"{x['term']}({x['gloss']})" for x in glossary))
+
     # ── 심화(전문) — 어려운 건 맨 아래로 ──
     L.append("")
     L.append("━━ 심화 (관심 있을 때만) ━━")
@@ -281,6 +328,8 @@ def build_brief(lang: str = "ko") -> dict:
         "daily_flow": flow_list, "rates": rates, "lag": lag,
         "sectors": sectors, "us_hot": us_hot, "kr_hot": kr_hot,
         "us_rotation": rot, "kr_read": kread,
+        "level": level, "teach": teach, "guide": guide,
+        "mood": the_mood, "sowhat": sowhat, "term_of_day": tod, "glossary": glossary,
         "text": text, "_snapshot": snap,
     }
     from engine.brief_html import render_html

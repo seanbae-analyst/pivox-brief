@@ -5,6 +5,7 @@
   python scripts/watchlist.py set ai_semi,bio,defense   # choose themes (replaces)
   python scripts/watchlist.py add TSLA,005930.KS        # add custom tickers
   python scripts/watchlist.py clear-custom              # drop custom tickers
+  python scripts/watchlist.py level 초보                # 설명 수준: 초보 / 보통 / 고수
 
 Writes data/watchlist.json. The morning brief reads it on the next run.
 """
@@ -27,6 +28,7 @@ def _show() -> None:
         names = ", ".join(n for n, _ in t["tickers"][:4]) + ("…" if len(t["tickers"]) > 4 else "")
         print(f"  {mark} {key:16} {t['label']:14} — {names}")
     print(f"\n내 종목(custom): {', '.join(wl['custom']) or '없음'}")
+    print(f"설명 수준(explain_level): {wl.get('explain_level', '초보')}  (초보 / 보통 / 고수)")
     uni = resolve(wl)
     print(f"\n→ 핫 종목 후보 {len(uni)}개: " + ", ".join(n for n, _ in uni[:12]) + ("…" if len(uni) > 12 else ""))
 
@@ -58,6 +60,15 @@ def main() -> int:
         wl["custom"] = []
         save(wl)
         print("custom 비움.\n")
+        _show()
+    elif cmd == "level" and len(args) > 1:
+        lv = args[1].strip()
+        if lv not in ("초보", "보통", "고수"):
+            print("수준은 초보 / 보통 / 고수 중 하나.")
+            return 1
+        wl["explain_level"] = lv
+        save(wl)
+        print(f"설명 수준 → {lv}\n")
         _show()
     else:
         print(__doc__)

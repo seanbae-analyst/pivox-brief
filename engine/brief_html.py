@@ -87,6 +87,29 @@ def _section_title(text: str) -> str:
             f'margin:4px 2px 8px;">{text}</div>')
 
 
+_MOOD_COL = {1: "#157f3b", 2: "#6a9b3f", 3: "#b7791f", 4: "#e0712a", 5: "#e1142d"}
+
+
+def _thermo(m: dict) -> str:
+    lv, col = m["level"], _MOOD_COL.get(m["level"], _SUB)
+    segs = ""
+    for i in range(1, 6):
+        c = col if i <= lv else "#e3e6ea"
+        segs += (f'<td height="9" style="background:{c};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
+                 f'<td width="4" style="font-size:0;line-height:0;">&nbsp;</td>')
+    return (
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:collapse;margin-top:10px;"><tr>'
+        f'<td width="34" style="font-size:26px;vertical-align:middle;">{m["emoji"]}</td>'
+        f'<td style="vertical-align:middle;">'
+        f'<div style="font-size:14px;font-weight:800;color:{col};">시장 기분: {_esc(m["label"])} '
+        f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {lv} · {_esc(m["note"])}</span></div>'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:collapse;margin-top:5px;max-width:240px;"><tr>{segs}</tr></table>'
+        f'</td></tr></table>'
+    )
+
+
 def _callout(text: str, color: str, bg: str) -> str:
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
@@ -123,13 +146,19 @@ def render_html(b: dict) -> str:
              f'📊 시장심리 브리핑</div>'
              f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{_esc(b.get("as_of"))} · 아침</div>')
 
-    # hero band — headline + plain, big
+    # hero band — headline + plain + (beginner) so-what + thermometer
+    guide = b.get("guide")
+    hero = f'<div style="font-size:21px;font-weight:800;color:{band[0]};line-height:1.3;letter-spacing:-.4px;">{_esc(risk)}</div>'
+    if b.get("plain"):
+        hero += f'<div style="font-size:14px;color:{_INK};margin-top:7px;line-height:1.55;">{_esc(b["plain"])}</div>'
+    if guide and b.get("sowhat"):
+        hero += (f'<div style="font-size:13px;color:{_INK};margin-top:8px;line-height:1.5;">'
+                 f'<b style="color:{band[0]};">그래서 뭐?</b>  {_esc(b["sowhat"])}</div>')
+    if guide and b.get("mood"):
+        hero += _thermo(b["mood"])
     P.append(f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
              f'style="border-collapse:separate;margin:0 0 16px;"><tr><td '
-             f'style="background:{band[1]};border-radius:14px;padding:16px 18px;">'
-             f'<div style="font-size:21px;font-weight:800;color:{band[0]};line-height:1.3;letter-spacing:-.4px;">{_esc(risk)}</div>'
-             + (f'<div style="font-size:14px;color:{_INK};margin-top:7px;line-height:1.55;">{_esc(b["plain"])}</div>' if b.get("plain") else "")
-             + '</td></tr></table>')
+             f'style="background:{band[1]};border-radius:14px;padding:16px 18px;">{hero}</td></tr></table>')
 
     # alerts
     if b.get("alerts"):
@@ -173,6 +202,29 @@ def render_html(b: dict) -> str:
     # watch
     if b.get("watch"):
         P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#b7791f", "#fdf6e3"))
+
+    # 📖 배우기 (초보 모드) — 오늘의 용어 + 용어 풀이
+    if b.get("teach"):
+        P.append(_section_title("📖 배우기"))
+        tod = b.get("term_of_day")
+        if tod:
+            ana = f'<div style="font-size:13px;color:{_SUB};margin-top:5px;line-height:1.5;">비유: {_esc(tod["analogy"])}</div>' if tod.get("analogy") else ""
+            P.append(
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+                f'style="border-collapse:separate;margin:0 0 10px;"><tr><td '
+                f'style="background:#eef3fb;border-radius:12px;padding:13px 15px;">'
+                f'<div style="font-size:12px;font-weight:700;color:#1f6feb;">오늘의 용어</div>'
+                f'<div style="font-size:16px;font-weight:800;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
+                f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>'
+                f'{ana}</td></tr></table>'
+            )
+        if b.get("glossary"):
+            chips = "".join(
+                f'<span style="display:inline-block;background:#f1f2f4;border-radius:8px;'
+                f'padding:5px 10px;margin:0 6px 6px 0;font-size:12px;color:{_INK};">'
+                f'<b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
+                for x in b["glossary"])
+            P.append(f'<div style="margin:0 0 12px;line-height:1.9;">{chips}</div>')
 
     # 심화 (small, gray)
     deep = []
