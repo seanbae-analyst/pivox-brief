@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import requests
@@ -24,12 +25,15 @@ import requests
 _TIMEOUT = 20
 
 
-def _sendgrid(key: str, sender: str, to: list[str], subject: str, text: str) -> str:
+def _sendgrid(key: str, sender: str, to: list[str], subject: str, text: str, html: str | None) -> str:
+    content = [{"type": "text/plain", "value": text}]
+    if html:
+        content.append({"type": "text/html", "value": html})  # last wins in clients
     body = {
         "personalizations": [{"to": [{"email": e} for e in to]}],
         "from": {"email": sender, "name": "Pivox Brief"},
         "subject": subject,
-        "content": [{"type": "text/plain", "value": text}],
+        "content": content,
     }
     r = requests.post(
         "https://api.sendgrid.com/v3/mail/send",
@@ -40,8 +44,13 @@ def _sendgrid(key: str, sender: str, to: list[str], subject: str, text: str) -> 
     raise RuntimeError(f"SendGrid {r.status_code}: {r.text[:160]}")
 
 
-def _gmail(user: str, app_pw: str, to: list[str], subject: str, text: str) -> str:
-    msg = MIMEText(text, "plain", "utf-8")
+def _gmail(user: str, app_pw: str, to: list[str], subject: str, text: str, html: str | None) -> str:
+    if html:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(text, "plain", "utf-8"))   # fallback first
+        msg.attach(MIMEText(html, "html", "utf-8"))    # preferred last
+    else:
+        msg = MIMEText(text, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = f"Pivox Brief <{user}>"
     msg["To"] = ", ".join(to)
@@ -59,15 +68,16 @@ def send_brief(brief: dict) -> str:
     flag = f"🚨 큰 움직임 {n}건 · " if n else ""
     subject = f"{flag}시장심리 브리핑 {brief['as_of']} — {brief['headline']}"
     text = brief["text"]
+    html = brief.get("html")
 
     attempts: list[tuple[str, callable]] = []
     sg = os.environ.get("SENDGRID_API_KEY")
     if sg:
         sender = os.environ.get("BRIEF_FROM", "noreply@pivoxquant.com")
-        attempts.append(("SendGrid", lambda: _sendgrid(sg, sender, to, subject, text)))
+        attempts.append(("SendGrid", lambda: _sendgrid(sg, sender, to, subject, text, html)))
     gu, gp = os.environ.get("GMAIL_USER"), os.environ.get("GMAIL_APP_PASSWORD")
     if gu and gp:
-        attempts.append(("Gmail", lambda: _gmail(gu, gp, to, subject, text)))
+        attempts.append(("Gmail", lambda: _gmail(gu, gp, to, subject, text, html)))
 
     if not attempts:
         return "delivery off (set SENDGRID_API_KEY or GMAIL_USER+GMAIL_APP_PASSWORD in .env)"

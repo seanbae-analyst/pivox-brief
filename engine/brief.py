@@ -264,12 +264,17 @@ def build_brief(lang: str = "ko") -> dict:
         "flow": {lbl: (flow.get(lbl) or {}).get("value") for lbl in _ALERT},
     }
 
-    return {
+    brief = {
         "date": str(date.today()), "as_of": as_of, "headline": headline,
-        "alerts": alerts, "watch": watch, "quiet": quiet,
-        "regime": regime, "positioning": positioning, "daily_flow": flow_list,
-        "rates": rates, "text": text, "_snapshot": snap,
+        "plain": plain, "alerts": alerts, "watch": watch, "quiet": quiet,
+        "regime": regime, "positioning": positioning, "extremes": extremes,
+        "daily_flow": flow_list, "rates": rates, "lag": lag,
+        "sectors": sectors, "us_rotation": rot, "kr_read": kread,
+        "text": text, "_snapshot": snap,
     }
+    from engine.brief_html import render_html
+    brief["html"] = render_html(brief)
+    return brief
 
 
 def persist(brief: dict) -> None:
