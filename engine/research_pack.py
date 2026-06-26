@@ -447,6 +447,20 @@ def render_markdown(pack: ResearchPack) -> str:
         lines.append("_★ = discretionary open-market trade (P/S); others are grants/tax/option/gift._")
         lines.append("")
 
+    # Research agenda (Wave-3 synthesis) — what to watch + the open questions
+    from engine.scaffold import build_scaffold
+
+    _scaf = build_scaffold({"qualitative": pack.qualitative, "quality_flags": pack.quality_flags,
+                            "risk_delta": pack.risk_delta, "ownership": pack.ownership})
+    if _scaf:
+        lines.append("## Research agenda")
+        for it in _scaf["items"]:
+            lines.append(f"- **{it['area']}** — {it['signal']}")
+            lines.append(f"  ↳ _{it['question']}_")
+        lines.append("")
+        lines.append(f"_{_scaf['note']}_")
+        lines.append("")
+
     # Coverage manifest — what this pack sees and (honestly) what it can't
     cov = coverage_manifest(pack)
     lines.append("## Coverage")
@@ -512,6 +526,8 @@ def coverage_manifest(pack: ResearchPack) -> dict:
         covered.append("Earnings-quality flags — accruals, cash conversion, margin/growth trajectory")
     if pack.risk_delta:
         covered.append("Risk-factor delta — 10-K Item 1A year-over-year (added/removed risks)")
+    if pack.qualitative or pack.quality_flags:
+        covered.append("Research agenda — synthesized drivers + open questions (scaffold)")
     partial = [
         "Management commentary — headline + link only (transcripts / interviews are copyrighted)",
         "Regulatory / legal / litigation events — via filings + headlines",
@@ -555,7 +571,9 @@ def to_record(pack: ResearchPack) -> dict:
         as_of = pack.quant["price"].get("as_of")
     as_of = as_of or date.today().isoformat()
 
-    return {
+    from engine.scaffold import build_scaffold
+
+    record = {
         "schema_version": RESEARCH_SCHEMA_VERSION,
         "as_of": as_of,
         "ticker": ticker,
@@ -590,6 +608,8 @@ def to_record(pack: ResearchPack) -> dict:
             "not investment advice (§10). Verify against the linked primary sources before acting."
         ),
     }
+    record["scaffold"] = build_scaffold(record)  # Wave-3 synthesis (research agenda)
+    return record
 
 
 def to_page_dict(pack: ResearchPack) -> dict:
@@ -602,7 +622,9 @@ def to_page_dict(pack: ResearchPack) -> dict:
     d = lambda o: asdict(o) if is_dataclass(o) else o
     er = earnings_read(pack.filings)
     p = pack.profile
-    return {
+    from engine.scaffold import build_scaffold
+
+    page = {
         "ticker": p.tickers[0] if p.tickers else pack.query.upper(),
         "name": p.name,
         "exchanges": p.exchanges,
@@ -622,3 +644,5 @@ def to_page_dict(pack: ResearchPack) -> dict:
         "coverage": coverage_manifest(pack),
         "sources": pack.sources,
     }
+    page["scaffold"] = build_scaffold(page)  # Wave-3 synthesis (research agenda)
+    return page

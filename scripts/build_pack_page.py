@@ -426,6 +426,21 @@ function marketContextCard(lang){
 }
 function render(p){ return p.language==='ko' ? renderKO(p) : renderEN(p); }
 
+function scaffoldCard(p){
+  const s=p.scaffold; if(!s||!(s.items||[]).length) return null;
+  const card=$('div','card');card.append($('h3',null,'Research agenda \\u2014 what to watch'));
+  const ul=$('ul','list');
+  s.items.forEach(it=>{
+    const src=it.source_url?' <a href="'+esc(it.source_url)+'" target="_blank" rel="noopener">src</a>':'';
+    const li=$('li');
+    li.innerHTML='<b>'+esc(it.area)+'</b> \\u2014 '+esc(it.signal)+src+'<br><span style="color:var(--muted)">\\u21b3 '+esc(it.question)+'</span>';
+    ul.append(li);
+  });
+  card.append(ul);
+  card.append($('p','fineprint',esc(s.note)));
+  return card;
+}
+
 function renderEN(p){
   const box=document.getElementById('pack');box.innerHTML='';
   box.append($('h2','name',esc(p.name)+' <span style="color:var(--muted);font-weight:600">('+esc(p.ticker)+')</span>'));
@@ -441,6 +456,7 @@ function renderEN(p){
   box.append(chips);
 
   {const mc=marketContextCard('en'); if(mc)box.append(mc);}
+  {const sc=scaffoldCard(p); if(sc)box.append(sc);}
 
   if(t.length){
     const card=$('div','card');card.append($('h3',null,'Financial trend (quarterly, SEC XBRL)'));
