@@ -24,8 +24,11 @@ def _arr(x):
     return "▲" if (x or 0) > 0 else ("▼" if (x or 0) < 0 else "—")
 
 
+_MONO = "font-family:var(--mono);"
+
+
 def _pct_cell(x, dp=1):
-    return f'<span style="color:{_col(x)};font-weight:700;white-space:nowrap;">{_arr(x)} {x:+.{dp}f}%</span>'
+    return f'<span style="color:{_col(x)};font-weight:600;white-space:nowrap;{_MONO}">{_arr(x)} {x:+.{dp}f}%</span>'
 
 
 def _table(rows):
@@ -43,7 +46,7 @@ def _hot_chips(items):
         bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#161a20")
         cells += (f'<div style="background:{bg};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
-                  f'<div style="font-size:19px;color:{_col(x)};font-weight:800;line-height:1.2;">{_arr(x)} {x:+.1f}%</div></div>')
+                  f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div></div>')
     return (f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px;">{cells}</div>')
 
 

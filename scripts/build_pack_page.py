@@ -210,12 +210,13 @@ ul.list b{color:var(--ink);font-weight:600}
 <div class="wrap">
 <section id="home">
 <div class="hero">
-<div class="kicker">Equity research · official filings only</div>
-<h1>Pivox Brief</h1>
-<p class="sub">One page of price-relevant factors from official filings — SEC EDGAR (US) &amp; Open DART (KR). A research starting point — not investment advice.</p>
-<form class="search" id="search"><input id="q" type="text" placeholder="Search US or KR — e.g. TSLA, MU, 005930, 카카오" autocomplete="off" spellcheck="false"><button type="submit">Search</button></form>
+<div class="card">
+<h3>종목 깊이 보기</h3>
+<p class="sub" style="margin:-6px 0 16px">공식 공시 기반 — SEC EDGAR(US) · Open DART(KR). 위 시장 브리핑에서 한 종목을 더 파볼 때. 투자자문이 아닙니다.</p>
+<form class="search" id="search"><input id="q" type="text" placeholder="미국·한국 종목 검색 — 예: TSLA, MU, 005930, 카카오" autocomplete="off" spellcheck="false"><button type="submit">검색</button></form>
 <div class="searchmsg" id="searchmsg"></div>
 <div class="examples" id="examples"></div>
+</div>
 </div>
 </section>
 <section id="result" hidden>
