@@ -21,9 +21,10 @@ data/output/*.research.json
 # Transient operational state (periodic refresh poll timestamps/accessions).
 data/refresh_state.json
 
-# Morning brief: machine-local day-over-day snapshot + generated digests.
+# Morning brief: machine-local day-over-day snapshot + generated digests + watchlist.
 data/brief_state.json
 data/output/brief_*.md
+data/watchlist.json
 
 # OS / editor
 .DS_Store

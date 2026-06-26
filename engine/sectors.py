@@ -28,20 +28,11 @@ _KR = [
     ("코스닥", "^KQ11", "지수"),
     ("원/달러", "KRW=X", "환율"),
 ]
-# buzzy universes — the brief shows the biggest movers from these each day (not all of them)
-_US_HOT = [
-    ("엔비디아", "NVDA"), ("테슬라", "TSLA"), ("팔란티어", "PLTR"), ("AMD", "AMD"),
-    ("코인베이스", "COIN"), ("슈마이", "SMCI"), ("애플", "AAPL"), ("메타", "META"),
-    ("마스트", "MSTR"), ("브로드컴", "AVGO"), ("넷플릭스", "NFLX"), ("아마존", "AMZN"),
-]
-_KR_HOT = [
-    ("삼성전자", "005930.KS"), ("SK하이닉스", "000660.KS"), ("에코프로비엠", "247540.KQ"),
-    ("에코프로", "086520.KQ"), ("한미반도체", "042700.KS"), ("두산에너빌리티", "034020.KS"),
-    ("한화에어로", "012450.KS"), ("알테오젠", "196170.KQ"), ("포스코홀딩스", "005490.KS"),
-    ("삼성바이오", "207940.KS"), ("카카오", "035720.KS"), ("네이버", "035420.KS"),
-]
-
 _HOT_N = 5  # how many movers to surface per market
+
+
+def _is_kr(sym: str) -> bool:
+    return sym.endswith(".KS") or sym.endswith(".KQ")
 
 
 def _moves(data, rows: list[tuple]) -> list[dict]:
@@ -82,7 +73,12 @@ def _hot(data, rows: list[tuple]) -> list[dict]:
 
 
 def build_sectors() -> dict | None:
-    syms = [s for _, s, _ in _US + _KR] + [s for _, s in _US_HOT + _KR_HOT]
+    from engine.watchlist import resolve
+    universe = resolve()  # the user's chosen themes + custom tickers
+    us_hot_u = [(n, s) for n, s in universe if not _is_kr(s)]
+    kr_hot_u = [(n, s) for n, s in universe if _is_kr(s)]
+
+    syms = [s for _, s, _ in _US + _KR] + [s for _, s in universe]
     try:
         import yfinance as yf
         warnings.filterwarnings("ignore")
@@ -90,7 +86,7 @@ def build_sectors() -> dict | None:
     except Exception:
         return None
     us, kr = _moves(data, _US), _moves(data, _KR)
-    us_hot, kr_hot = _hot(data, _US_HOT), _hot(data, _KR_HOT)
+    us_hot, kr_hot = _hot(data, us_hot_u), _hot(data, kr_hot_u)
     if not (us or kr or us_hot or kr_hot):
         return None
     return {
