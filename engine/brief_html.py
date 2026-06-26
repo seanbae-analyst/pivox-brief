@@ -8,11 +8,11 @@ movers are the visual hero — big tinted chips with 22px numbers — since that
 """
 from __future__ import annotations
 
-# palette unified with the research engine (pack.html): teal accent, up=teal / down=red
-_UP, _DN, _FLAT = "#0d9488", "#dc2626", "#64748b"
-_UP_BG, _DN_BG, _FLAT_BG = "#ecfdf5", "#fef2f2", "#f1f5f9"
-_INK, _SUB, _LINE, _BG, _CARD = "#0f172a", "#64748b", "#e6e8ec", "#f8fafc", "#ffffff"
-_ACCENT = "#0d9488"
+# Vantablack + Bronze: dark terminal, gold accent, up=green / down=red
+_UP, _DN, _FLAT = "#5ec08a", "#e26d60", "#8b919b"
+_UP_BG, _DN_BG, _FLAT_BG = "#15241d", "#261718", "#161a20"
+_INK, _SUB, _LINE, _BG, _CARD = "#ECEAE3", "#8b919b", "#1f2329", "#0a0b0d", "#101317"
+_ACCENT = "#c6a063"
 
 
 def _esc(s) -> str:
@@ -89,14 +89,14 @@ def _section_title(text: str) -> str:
             f'margin:4px 2px 8px;">{text}</div>')
 
 
-_MOOD_COL = {1: "#0d9488", 2: "#3f9e6b", 3: "#b7791f", 4: "#e0712a", 5: "#dc2626"}
+_MOOD_COL = {1: "#5ec08a", 2: "#8fb56a", 3: "#c6a063", 4: "#d6a44f", 5: "#e26d60"}
 
 
 def _thermo(m: dict) -> str:
     lv, col = m["level"], _MOOD_COL.get(m["level"], _SUB)
     segs = ""
     for i in range(1, 6):
-        c = col if i <= lv else "#e3e6ea"
+        c = col if i <= lv else "#1f2329"
         segs += (f'<td height="9" style="background:{c};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
                  f'<td width="4" style="font-size:0;line-height:0;">&nbsp;</td>')
     return (
@@ -187,7 +187,7 @@ def render_html(b: dict) -> str:
     if body:
         P.append(_card("🇺🇸", "미국장", "어제 마감 · 5일 변화", body))
         if b.get("us_rotation"):
-            P.append(_callout(f'<b>한눈에</b>  {_esc(b["us_rotation"])}', band[0], "#f7f8fa"))
+            P.append(_callout(f'<b>한눈에</b>  {_esc(b["us_rotation"])}', band[0], "#161a20"))
 
     # KR card
     body = _rows(kr_idx)
@@ -199,11 +199,11 @@ def render_html(b: dict) -> str:
     if body:
         P.append(_card("🇰🇷", "한국장", "오늘 마감 · 5일 변화", body))
         if b.get("kr_read"):
-            P.append(_callout(f'<b>한눈에</b>  {_esc(b["kr_read"])}', band[0], "#f7f8fa"))
+            P.append(_callout(f'<b>한눈에</b>  {_esc(b["kr_read"])}', band[0], "#161a20"))
 
     # watch
     if b.get("watch"):
-        P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#b7791f", "#fdf6e3"))
+        P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#c6a063", "#241d0e"))
 
     # 📖 배우기 (초보 모드) — 오늘의 용어 + 용어 풀이
     if b.get("teach"):
@@ -222,7 +222,7 @@ def render_html(b: dict) -> str:
             )
         if b.get("glossary"):
             chips = "".join(
-                f'<span style="display:inline-block;background:#f1f2f4;border-radius:8px;'
+                f'<span style="display:inline-block;background:#161a20;border-radius:8px;'
                 f'padding:5px 10px;margin:0 6px 6px 0;font-size:12px;color:{_INK};">'
                 f'<b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
                 for x in b["glossary"])
