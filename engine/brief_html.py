@@ -8,9 +8,11 @@ movers are the visual hero — big tinted chips with 22px numbers — since that
 """
 from __future__ import annotations
 
-_UP, _DN, _FLAT = "#e1142d", "#1f6feb", "#6b7280"
-_UP_BG, _DN_BG, _FLAT_BG = "#fde7ea", "#e8f0fd", "#f1f2f4"
-_INK, _SUB, _LINE, _BG, _CARD = "#15171c", "#5b6470", "#e6e8ec", "#eef0f3", "#ffffff"
+# palette unified with the research engine (pack.html): teal accent, up=teal / down=red
+_UP, _DN, _FLAT = "#0d9488", "#dc2626", "#64748b"
+_UP_BG, _DN_BG, _FLAT_BG = "#ecfdf5", "#fef2f2", "#f1f5f9"
+_INK, _SUB, _LINE, _BG, _CARD = "#0f172a", "#64748b", "#e6e8ec", "#f8fafc", "#ffffff"
+_ACCENT = "#0d9488"
 
 
 def _esc(s) -> str:
@@ -87,7 +89,7 @@ def _section_title(text: str) -> str:
             f'margin:4px 2px 8px;">{text}</div>')
 
 
-_MOOD_COL = {1: "#157f3b", 2: "#6a9b3f", 3: "#b7791f", 4: "#e0712a", 5: "#e1142d"}
+_MOOD_COL = {1: "#0d9488", 2: "#3f9e6b", 3: "#b7791f", 4: "#e0712a", 5: "#dc2626"}
 
 
 def _thermo(m: dict) -> str:
@@ -132,7 +134,7 @@ def render_html(b: dict) -> str:
     kr_fx = next((i for i in kr if i["group"] == "환율"), None)
 
     risk = b.get("headline", "")
-    band = (_UP, "#fdeaea") if "회피" in risk else (("#157f3b", "#e9f7ee") if "선호" in risk else (_SUB, "#eef0f3"))
+    band = (_DN, _DN_BG) if "회피" in risk else ((_UP, _UP_BG) if "선호" in risk else (_SUB, _FLAT_BG))
 
     P = []
     P.append(f'<div style="background:{_BG};padding:18px 12px;">')
@@ -163,7 +165,7 @@ def render_html(b: dict) -> str:
     # alerts
     if b.get("alerts"):
         items = "".join(f'<div style="margin:3px 0;">• {_esc(a)}</div>' for a in b["alerts"])
-        P.append(_callout(f'<b>🚨 큰 움직임</b><div style="margin-top:4px;">{items}</div>', _UP, "#fdeaea"))
+        P.append(_callout(f'<b>🚨 큰 움직임</b><div style="margin-top:4px;">{items}</div>', _DN, _DN_BG))
 
     # 🔥 HOT — the hero
     if us_hot or kr_hot:
@@ -212,8 +214,8 @@ def render_html(b: dict) -> str:
             P.append(
                 f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
                 f'style="border-collapse:separate;margin:0 0 10px;"><tr><td '
-                f'style="background:#eef3fb;border-radius:12px;padding:13px 15px;">'
-                f'<div style="font-size:12px;font-weight:700;color:#1f6feb;">오늘의 용어</div>'
+                f'style="background:{_UP_BG};border-radius:12px;padding:13px 15px;">'
+                f'<div style="font-size:12px;font-weight:700;color:{_ACCENT};">오늘의 용어</div>'
                 f'<div style="font-size:16px;font-weight:800;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
                 f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>'
                 f'{ana}</td></tr></table>'

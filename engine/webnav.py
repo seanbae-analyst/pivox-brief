@@ -17,9 +17,9 @@ def nav(active: str) -> str:
     items = []
     for key, href, label in _LINKS:
         on = key == active
-        color = "#15171c" if on else "#5b6470"
+        color = "#0f172a" if on else "#64748b"
         weight = "800" if on else "500"
-        bb = "border-bottom:2px solid #1f6feb;" if on else "border-bottom:2px solid transparent;"
+        bb = "border-bottom:2px solid #0d9488;" if on else "border-bottom:2px solid transparent;"
         items.append(
             f'<a href="{href}" style="color:{color};text-decoration:none;font-weight:{weight};'
             f'font-size:14px;padding:14px 2px;{bb}">{label}</a>'

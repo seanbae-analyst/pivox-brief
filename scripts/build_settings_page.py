@@ -35,7 +35,7 @@ HTML = """<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>브리핑 설정 — 내가 보고 싶은 것 고르기</title>
 <style>
-:root{--ink:#15171c;--sub:#5b6470;--line:#e6e8ec;--bg:#eef0f3;--card:#fff;--accent:#1f6feb}
+:root{--ink:#0f172a;--sub:#64748b;--line:#e6e8ec;--bg:#f8fafc;--card:#fff;--accent:#0d9488}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
 font:15px/1.55 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
 .wrap{max-width:600px;margin:0 auto;padding:20px 14px 60px}
@@ -43,10 +43,10 @@ h1{font-size:22px;margin:0 0 2px;letter-spacing:-.4px}.sub{color:var(--sub);font
 .sec{font-size:13px;font-weight:800;color:var(--ink);margin:22px 2px 8px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .t{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;display:flex;gap:9px;align-items:flex-start}
-.t.on{border-color:var(--accent);background:#eef3fb}
+.t.on{border-color:var(--accent);background:#ecfdf5}
 .t input{margin:3px 0 0}.t .l{font-weight:700;font-size:14px}.t .n{color:var(--sub);font-size:11px;margin-top:2px;line-height:1.4}
 .lv{display:flex;gap:8px}.lv button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer}
-.lv button.on{border-color:var(--accent);background:#eef3fb;color:var(--accent)}
+.lv button.on{border-color:var(--accent);background:#ecfdf5;color:var(--accent)}
 input.tx{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px}
 .save{margin-top:22px;width:100%;background:var(--accent);color:#fff;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;cursor:pointer}
 .save:disabled{background:#9bb6e0}
