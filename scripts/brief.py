@@ -35,6 +35,8 @@ def main() -> int:
             print(f"🚨 {brief['as_of']} — 큰 움직임 {len(brief['alerts'])}건")
             for a in brief["alerts"]:
                 print(f"   • {a}")
+            from engine.notify import send_brief
+            print(f"[delivery] {send_brief(brief)}")  # push the alert (key-gated)
             persist(brief)  # record so the same event doesn't re-alert tomorrow
             return 10
         print(f"{brief['as_of']} — 알림 없음 (조용)")

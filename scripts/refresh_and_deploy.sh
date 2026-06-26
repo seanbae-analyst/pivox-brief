@@ -39,4 +39,10 @@ if command -v vercel >/dev/null 2>&1; then
   vercel --prod --yes --scope seanbae-analysts-projects >/dev/null 2>&1 \
     && echo "deployed -> Vercel" || echo "vercel deploy FAILED (CLI auth may have expired — run: vercel login)"
 fi
+
+# 5. Morning market-psychology brief — generate + email (delivery is key-gated; inert
+#    until SENDGRID_API_KEY + BRIEF_TO are set in .env, so this line is safe before keys).
+#    Runs on the same fresh data the refresh just rebuilt. Never blocks the refresh.
+./venv/bin/python scripts/brief.py --send --quiet || echo "brief step failed (non-fatal)"
+
 echo "===== done $(date '+%T') ====="
