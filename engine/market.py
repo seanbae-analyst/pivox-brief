@@ -210,12 +210,19 @@ _FRED_SERIES = [
 ]
 
 
-def _fred() -> dict | None:
-    key = os.environ.get("FRED_API_KEY")
-    if not key:
-        return None
-    macro: dict = {}
-    for fld, sid, label, unit in _FRED_SERIES:
+# Korea macro — the clean slice available free/official (FRED/OECD/BIS). The high-signal KR
+# sentiment (foreign-investor flows, KOSPI/VKOSPI) is KRX-proprietary → named as a blind spot.
+_KR_SERIES = [
+    ("krw", "DEXKOUS", "KRW/USD", ""),
+    ("kr_3m", "IR3TIB01KRM156N", "KR 3M rate", "%"),
+    ("kr_10y", "IRLTLT01KRM156N", "KR 10Y bond", "%"),
+    ("kr_unrate", "LRHUTTTTKRM156S", "KR unemployment", "%"),
+]
+
+
+def _fred_fetch(key: str, series: list[tuple]) -> dict | None:
+    out: dict = {}
+    for fld, sid, label, unit in series:
         try:
             r = requests.get(
                 "https://api.stlouisfed.org/fred/series/observations",
@@ -227,16 +234,27 @@ def _fred() -> dict | None:
             obs = r.json().get("observations", [])
             val = _f(obs[0].get("value")) if obs else None
             if val is not None:
-                macro[fld] = {"value": val, "as_of": obs[0]["date"], "label": label, "unit": unit}
+                out[fld] = {"value": val, "as_of": obs[0]["date"], "label": label, "unit": unit}
         except Exception:
             continue
-    return macro or None
+    return out or None
+
+
+def _fred() -> dict | None:
+    key = os.environ.get("FRED_API_KEY")
+    return _fred_fetch(key, _FRED_SERIES) if key else None
+
+
+def _kr_macro() -> dict | None:
+    key = os.environ.get("FRED_API_KEY")
+    return _fred_fetch(key, _KR_SERIES) if key else None
 
 
 def build_market_context() -> dict:
     rates = _rates()
     positioning = _positioning()
     macro = _fred()
+    kr_macro = _kr_macro()
     sources = [
         "US Treasury — Daily Par Yield Curve, nominal + real/TIPS (home.treasury.gov)",
         "CFTC Commitments of Traders — Traders in Financial Futures + legacy (publicreporting.cftc.gov)",
@@ -250,6 +268,7 @@ def build_market_context() -> dict:
         "regime": _regime_read(rates, positioning),
         "macro": macro,
         "macro_available": macro is not None,
+        "kr_macro": kr_macro,
         "sources": sources,
         "out_of_reach": (
             "Real-time quotes, options-implied vol, sell-side consensus / price targets, and "

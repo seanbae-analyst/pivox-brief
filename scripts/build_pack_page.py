@@ -369,7 +369,7 @@ function peerCard(p){
   card.append($('p','fineprint','Latest reported quarter per issuer; periods may differ \\u00b7 ROE = n/m when capital structure (e.g. buybacks) distorts it \\u00b7 US issuers (SEC XBRL).'));
   return card;
 }
-function marketContextCard(){
+function marketContextCard(lang){
   const M=MARKET; if(!M||(!M.rates&&!(M.positioning||[]).length&&!M.macro)) return null;
   const card=$('div','card');card.append($('h3',null,'Market psychology \\u2014 as of '+esc(M.as_of||'')));
   const r=M.rates;
@@ -411,6 +411,16 @@ function marketContextCard(){
     [['VIX',m.vix],['HY spread',m.hy_spread],['S&P 500',m.spx],['Nasdaq',m.nasdaq],['US dollar',m.dollar],['Fin conditions',m.nfci],['Fed funds',m.fed_funds],['Unemployment',m.unrate]].forEach(([l,o])=>{const v=fmt(o);if(v!=null)grid.append(stat(l,v));});
     card.append(grid);
   }
+  if(lang==='ko' && M.kr_macro){
+    const k=M.kr_macro;
+    card.append($('div','subh','Korea macro \\u2014 FRED/OECD'));
+    const grid=$('div','statgrid');
+    const stat=(l,v)=>{const s=$('div','stat');s.append($('b',null,v),$('span',null,l));return s;};
+    const fmt=o=>o==null?null:(o.value+(o.unit||''));
+    [['KRW/USD',k.krw],['KR 3M rate',k.kr_3m],['KR 10Y bond',k.kr_10y],['KR unemployment',k.kr_unrate]].forEach(([l,o])=>{const v=fmt(o);if(v!=null)grid.append(stat(l,v));});
+    card.append(grid);
+    card.append($('p','fineprint','Korea: macro only \\u2014 KRX-owned signals (foreign-investor flows, KOSPI, VKOSPI) are not freely/officially available.'));
+  }
   card.append($('p','fineprint','Market-wide context (not security-specific). '+esc(M.out_of_reach||'')));
   return card;
 }
@@ -430,7 +440,7 @@ function renderEN(p){
   }
   box.append(chips);
 
-  {const mc=marketContextCard(); if(mc)box.append(mc);}
+  {const mc=marketContextCard('en'); if(mc)box.append(mc);}
 
   if(t.length){
     const card=$('div','card');card.append($('h3',null,'Financial trend (quarterly, SEC XBRL)'));
@@ -482,7 +492,7 @@ function renderKO(p){
   }
   box.append(chips);
 
-  {const mc=marketContextCard(); if(mc)box.append(mc);}
+  {const mc=marketContextCard('ko'); if(mc)box.append(mc);}
 
   if(t.length){
     const card=$('div','card');card.append($('h3',null,'재무 추이 (연간, DART 정기보고서)'));
