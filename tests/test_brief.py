@@ -13,9 +13,9 @@ def test_us_rotation_money_flow():
 
 
 def test_kr_read_broad_weakness_flags_worst():
-    kr = [_sec("코스피", "지수", -7.1), _sec("코스닥", "지수", -11.9),
-          _sec("현대차", "자동차", -21.6), _sec("삼성전자", "반도체", -4.1)]
-    out = _kr_read(kr)
+    kr = [_sec("코스피", "지수", -7.1), _sec("코스닥", "지수", -11.9)]
+    kr_hot = [{"label": "현대차", "chg1_pct": -21.6}, {"label": "삼성전자", "chg1_pct": -4.1}]
+    out = _kr_read(kr, kr_hot)
     assert "전반 약세" in out and "현대차" in out
 
 

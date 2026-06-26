@@ -94,21 +94,20 @@ def _us_rotation(us: list[dict]) -> str | None:
     return f"섹터 전반 강세 (제일 강세: {top['label']} {top['chg5_pct']:+.1f}%)."
 
 
-def _kr_read(kr: list[dict]) -> str | None:
+def _kr_read(kr: list[dict], kr_hot: list[dict] | None = None) -> str | None:
     by = {i["label"]: i for i in kr}
     ks, kq = by.get("코스피"), by.get("코스닥")
     if not (ks and kq):
         return None
-    stocks = [i for i in kr if i["group"] in ("반도체", "2차전지", "자동차")]
-    worst = min(stocks, key=lambda i: i["chg5_pct"], default=None) if stocks else None
+    worst = min(kr_hot, key=lambda i: i["chg1_pct"], default=None) if kr_hot else None
     if ks["chg5_pct"] < 0 and kq["chg5_pct"] < 0:
         t = f"한국 증시 전반 약세 (코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}%)."
-        if worst and worst["chg5_pct"] < -5:
-            t += f" 특히 {worst['label']}({worst['chg5_pct']:+.1f}%)이 많이 빠짐."
+        if worst and worst["chg1_pct"] < -3:
+            t += f" 오늘 특히 {worst['label']}({worst['chg1_pct']:+.1f}%)이 많이 빠짐."
         return t
     if ks["chg5_pct"] > 0 and kq["chg5_pct"] > 0:
         return f"한국 증시 전반 강세 (코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}%)."
-    return f"코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}% — 대형주·중소형주 방향이 엇갈림."
+    return f"코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}% — 방향이 엇갈림."
 
 
 def _load_state() -> dict:
@@ -189,11 +188,15 @@ def build_brief(lang: str = "ko") -> dict:
 
     us = (sectors or {}).get("us") or []
     kr = (sectors or {}).get("kr") or []
+    us_hot = (sectors or {}).get("us_hot") or []
+    kr_hot = (sectors or {}).get("kr_hot") or []
     us_idx = [i for i in us if i["group"] == "지수"]
     us_sec = [i for i in us if i["group"] == "섹터"]
     kr_idx = [i for i in kr if i["group"] == "지수"]
     kr_fx = next((i for i in kr if i["group"] == "환율"), None)
-    kr_stk = [i for i in kr if i["group"] in ("반도체", "2차전지", "자동차")]
+
+    def hot_row(items):
+        return "  ".join(f"{_arrow(i['chg1_pct'])}{i['label']} {i['chg1_pct']:+.1f}%" for i in items)
 
     L: list[str] = []
     L.append(f"📊 시장심리 브리핑 — {as_of} 아침")
@@ -207,6 +210,15 @@ def build_brief(lang: str = "ko") -> dict:
         L.append("🚨 큰 움직임:")
         for a in alerts:
             L.append(f"   • {a}")
+
+    # ── 🔥 핫 종목 (오늘 제일 많이 움직인) ──
+    if us_hot or kr_hot:
+        L.append("")
+        L.append("━━ 🔥 핫 종목 (오늘 제일 많이 움직인) ━━")
+        if us_hot:
+            L.append("🇺🇸 " + hot_row(us_hot))
+        if kr_hot:
+            L.append("🇰🇷 " + hot_row(kr_hot))
 
     # ── 🇺🇸 미국장 ──
     L.append("")
@@ -229,9 +241,7 @@ def build_brief(lang: str = "ko") -> dict:
     if kr_fx:
         won = "원화 약세(달러 비쌈)" if (kr_fx["chg5_pct"] or 0) > 0 else "원화 강세(달러 쌈)"
         L.append(f"환율   원/달러 {kr_fx['last']:,.0f}원 ({kr_fx['chg5_pct']:+.1f}% → {won})")
-    if kr_stk:
-        L.append("대표주 " + _move_row(kr_stk))
-    kread = _kr_read(kr)
+    kread = _kr_read(kr, kr_hot)
     if kread:
         L.append(f"한눈에: {kread}")
     if not kr:
@@ -269,7 +279,8 @@ def build_brief(lang: str = "ko") -> dict:
         "plain": plain, "alerts": alerts, "watch": watch, "quiet": quiet,
         "regime": regime, "positioning": positioning, "extremes": extremes,
         "daily_flow": flow_list, "rates": rates, "lag": lag,
-        "sectors": sectors, "us_rotation": rot, "kr_read": kread,
+        "sectors": sectors, "us_hot": us_hot, "kr_hot": kr_hot,
+        "us_rotation": rot, "kr_read": kread,
         "text": text, "_snapshot": snap,
     }
     from engine.brief_html import render_html
