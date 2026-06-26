@@ -30,7 +30,8 @@ _MONO = "font-family:var(--mono);"
 
 
 def _pct_cell(x, dp=1):
-    return f'<span style="color:{_col(x)};font-weight:600;white-space:nowrap;{_MONO}">{_arr(x)} {x:+.{dp}f}%</span>'
+    val = "n/a" if x is None else f"{x:+.{dp}f}%"
+    return f'<span style="color:{_col(x)};font-weight:600;white-space:nowrap;{_MONO}">{_arr(x)} {val}</span>'
 
 
 def _table(rows):
@@ -85,6 +86,41 @@ def _stat_strip(b: dict) -> str:
         return ""
     return (f'<div style="display:flex;flex-wrap:wrap;border:1px solid {_LINE};border-radius:12px;'
             f'overflow:hidden;background:#111827;margin:0 0 18px;">{cells}</div>')
+
+
+def _fg_zone(s):
+    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#d4a558" if s <= 55
+            else "#cf9050" if s <= 75 else "#cf6b6b")
+
+
+def _fg_card(fg):
+    if not fg:
+        return ""
+    s, col = fg["score"], _fg_zone(fg["score"])
+    comps = ""
+    for c in fg["components"]:
+        cc = _fg_zone(c["score"])
+        comps += (
+            f'<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">'
+            f'<div style="flex:0 0 92px;font-size:12px;color:{_SUB};">{_esc(c["name"])}</div>'
+            f'<div style="flex:1;height:6px;border-radius:3px;background:#1e293b;position:relative;">'
+            f'<div style="position:absolute;left:0;top:0;bottom:0;width:{c["score"]}%;background:{cc};border-radius:3px;"></div></div>'
+            f'<div style="flex:0 0 26px;text-align:right;font-size:12px;color:{_INK};{_MONO}">{c["score"]}</div></div>')
+    return (
+        f'<div class="card"><h3>공포 · 탐욕 지수</h3>'
+        f'<div style="display:flex;align-items:baseline;gap:12px;">'
+        f'<div style="font-family:var(--serif);font-size:46px;font-weight:700;color:{col};line-height:1;">{s}</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{col};">{_esc(fg["label"])}</div>'
+        f'<div style="font-size:11px;color:{_SUB};{_MONO}">/ 100</div></div>'
+        f'<div style="position:relative;height:8px;border-radius:5px;margin:12px 0 6px;'
+        f'background:linear-gradient(90deg,#7AA0C8,#86a8a0,#d4a558,#cf9050,#cf6b6b);">'
+        f'<div style="position:absolute;top:-4px;left:{s}%;width:16px;height:16px;border-radius:50%;'
+        f'background:{col};border:3px solid #111827;transform:translateX(-50%);box-shadow:0 0 0 1px {col}cc;"></div></div>'
+        f'<div style="display:flex;justify-content:space-between;font:600 10px var(--mono);color:{_SUB};letter-spacing:.08em;margin-bottom:14px;">'
+        f'<span>극단적 공포</span><span>중립</span><span>극단적 탐욕</span></div>'
+        f'{comps}'
+        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;">CNN식 6요인 합성 · 무료/공식 데이터(FRED·CFTC·crypto)</div></div>'
+    )
 
 
 def _hot_chips(items):
@@ -142,6 +178,9 @@ def render_home_cards(b: dict) -> str:
         P.append(f'<p style="font-size:13px;color:{_INK};margin:6px 0 0;line-height:1.5;">'
                  f'<b style="color:{rcol};">그래서 뭐?</b> {_esc(b["sowhat"])}</p>')
     P.append('</div>')
+
+    # ── 공포·탐욕 지수 (centerpiece) ──
+    P.append(_fg_card(b.get("fear_greed")))
 
     # ── 🔥 핫 종목 ──
     us_hot, kr_hot = b.get("us_hot") or [], b.get("kr_hot") or []

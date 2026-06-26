@@ -22,6 +22,14 @@ from engine.market import _daily_flow, _positioning, _rates, _regime_read
 from engine.sectors import build_sectors
 from engine.watchlist import load as load_watchlist
 
+
+def _safe_fear_greed():
+    try:
+        from engine.psych import fear_greed
+        return fear_greed()
+    except Exception:
+        return None
+
 _STATE = Path(__file__).resolve().parent.parent / "data" / "brief_state.json"
 
 # big-event thresholds — 1-day moves on the freshest daily (T+1) series
@@ -80,11 +88,13 @@ def _arrow(x) -> str:
 
 
 def _move_row(items: list[dict]) -> str:
-    return "  ".join(f"{_arrow(i['chg5_pct'])}{i['label']} {i['chg5_pct']:+.1f}%" for i in items)
+    return "  ".join(
+        f"{_arrow(i['chg5_pct'])}{i['label']} " + ("n/a" if i.get("chg5_pct") is None else f"{i['chg5_pct']:+.1f}%")
+        for i in items)
 
 
 def _us_rotation(us: list[dict]) -> str | None:
-    secs = [i for i in us if i["group"] == "섹터"]
+    secs = [i for i in us if i["group"] == "섹터" and i.get("chg5_pct") is not None]
     if not secs:
         return None
     top = max(secs, key=lambda i: i["chg5_pct"])
@@ -99,7 +109,7 @@ def _us_rotation(us: list[dict]) -> str | None:
 def _kr_read(kr: list[dict], kr_hot: list[dict] | None = None) -> str | None:
     by = {i["label"]: i for i in kr}
     ks, kq = by.get("코스피"), by.get("코스닥")
-    if not (ks and kq):
+    if not (ks and kq and ks.get("chg5_pct") is not None and kq.get("chg5_pct") is not None):
         return None
     worst = min(kr_hot, key=lambda i: i["chg1_pct"], default=None) if kr_hot else None
     if ks["chg5_pct"] < 0 and kq["chg5_pct"] < 0:
@@ -181,6 +191,7 @@ def build_brief(lang: str = "ko") -> dict:
     flow_list = _daily_flow() or []
     flow = {f["label"]: f for f in flow_list}
     sectors = build_sectors()
+    fg = _safe_fear_greed()
     prior = _load_state()
 
     level = load_watchlist().get("explain_level", "초보")
@@ -245,6 +256,12 @@ def build_brief(lang: str = "ko") -> dict:
         L.append("🚨 큰 움직임:")
         for a in alerts:
             L.append(f"   • {a}")
+
+    # ── 😱 공포·탐욕 지수 (0~100 합성) ──
+    if fg:
+        L.append("")
+        L.append(f"━━ 공포·탐욕 지수: {fg['score']}/100 ({fg['label']}) ━━")
+        L.append("  " + " · ".join(f"{c['name']} {c['score']}" for c in fg["components"]))
 
     # ── 🔥 핫 종목 (오늘 제일 많이 움직인) ──
     if us_hot or kr_hot:
@@ -330,6 +347,7 @@ def build_brief(lang: str = "ko") -> dict:
         "us_rotation": rot, "kr_read": kread,
         "level": level, "teach": teach, "guide": guide,
         "mood": the_mood, "sowhat": sowhat, "term_of_day": tod, "glossary": glossary,
+        "fear_greed": fg,
         "text": text, "_snapshot": snap,
     }
     from engine.brief_html import render_html

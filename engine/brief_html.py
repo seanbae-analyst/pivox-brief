@@ -61,11 +61,12 @@ def _rows(items: list[dict]) -> str:
     out = []
     for i in items:
         x = i.get("chg5_pct")
+        val = "n/a" if x is None else f"{x:+.1f}%"
         out.append(
             f'<tr>'
             f'<td style="padding:7px 0;font-size:15px;color:{_INK};white-space:nowrap;">{_esc(i["label"])}</td>'
             f'<td style="padding:7px 0;text-align:right;font-size:16px;font-weight:800;'
-            f'color:{_col(x)};white-space:nowrap;letter-spacing:-.2px;">{_arr(x)} {x:+.1f}%</td>'
+            f'color:{_col(x)};white-space:nowrap;letter-spacing:-.2px;">{_arr(x)} {val}</td>'
             f'</tr>'
         )
     return "".join(out)
@@ -123,6 +124,31 @@ def _callout(text: str, color: str, bg: str) -> str:
     )
 
 
+def _fg_zone(s):
+    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#d4a558" if s <= 55
+            else "#cf9050" if s <= 75 else "#cf6b6b")
+
+
+def _fg_block(fg) -> str:
+    if not fg:
+        return ""
+    s, col = fg["score"], _fg_zone(fg["score"])
+    rows = (f'<tr><td colspan="3" style="padding:2px 0 12px;">'
+            f'<span style="font-size:36px;font-weight:800;color:{col};">{s}</span>'
+            f'<span style="font-size:16px;font-weight:700;color:{col};"> {_esc(fg["label"])}</span>'
+            f'<span style="font-size:12px;color:{_SUB};"> / 100</span></td></tr>')
+    for c in fg["components"]:
+        cc, w = _fg_zone(c["score"]), int(c["score"])
+        rows += (
+            f'<tr><td style="padding:5px 0;font-size:13px;color:{_SUB};white-space:nowrap;">{_esc(c["name"])}</td>'
+            f'<td style="padding:5px 10px;width:99%;">'
+            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>'
+            f'<td width="{w}%" height="6" style="background:{cc};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
+            f'<td height="6" style="font-size:0;line-height:0;background:#1e293b;border-radius:3px;">&nbsp;</td></tr></table></td>'
+            f'<td style="padding:5px 0;text-align:right;font-size:13px;color:{_INK};">{c["score"]}</td></tr>')
+    return _card("😱", "공포·탐욕 지수", "CNN식 6요인 합성 · 무료/공식 데이터", rows)
+
+
 def render_html(b: dict) -> str:
     sectors = b.get("sectors") or {}
     us = sectors.get("us") or []
@@ -167,6 +193,9 @@ def render_html(b: dict) -> str:
     if b.get("alerts"):
         items = "".join(f'<div style="margin:3px 0;">• {_esc(a)}</div>' for a in b["alerts"])
         P.append(_callout(f'<b>🚨 큰 움직임</b><div style="margin-top:4px;">{items}</div>', _DN, _DN_BG))
+
+    # 공포·탐욕 지수
+    P.append(_fg_block(b.get("fear_greed")))
 
     # 🔥 HOT — the hero
     if us_hot or kr_hot:
