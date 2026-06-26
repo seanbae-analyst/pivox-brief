@@ -59,6 +59,8 @@ def research(ticker: str) -> dict | None:
     d = to_page_dict(pack)
     d["searched"] = True
     d["search_note"] = _SEARCH_NOTE
+    from engine.analysts import analyst_consensus
+    d["analysts"] = analyst_consensus(ticker)   # gray-zone: sell-side via Finnhub (key-gated, graceful)
     return d
 
 

@@ -243,6 +243,26 @@ function fileRow(f){
   return '<a href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.primary_document||'filing')+'</a> \u00b7 filed '+esc(f.filing_date)+lbl;
 }
 
+function analystCard(p){
+  const a=p.analysts; if(!a||!a.total) return null;
+  const card=$('div','card');card.append($('h3',null,'Analyst consensus \u2014 sell-side (third-party)'));
+  const cl=$('div','priceline');
+  cl.innerHTML='<b>'+esc(a.consensus)+'</b> \u00b7 '+a.score+'/5 across '+a.total+' analysts \u00b7 '+esc(a.period||'');
+  card.append(cl);
+  let h='<table><tr><th>Rating</th><th class="num">Analysts</th><th class="num">Share</th></tr>';
+  (a.buckets||[]).forEach(function(b){var label=b[0],f=b[1];var n=(a.distribution||{})[f]||0;var pc=a.total?Math.round(100*n/a.total):0;var cls=(f==='strongBuy'||f==='buy')?'up':((f==='sell'||f==='strongSell')?'down':'');
+    h+='<tr><td class="'+cls+'">'+esc(label)+'</td><td class="num">'+n+'</td><td class="num">'+pc+'%</td></tr>';});
+  h+='</table>';card.innerHTML+=h;
+  if(a.target&&a.target.mean){
+    var t=a.target;var px=(p.price&&p.price.close)||(((p.quant||{}).price||{}).last_close);
+    var up='';if(px){var u=(t.mean-px)/px*100;up=' ('+(u>=0?'+':'')+u.toFixed(1)+'% vs $'+px+')';}
+    var d=$('div');d.style.marginTop='10px';
+    d.innerHTML='<b>Price target</b> mean $'+t.mean+up+' \u00b7 range $'+t.low+'\u2013$'+t.high;
+    card.append(d);
+  }
+  card.append($('p','fineprint','Aggregated sell-side opinion via '+esc(a.source||'Finnhub')+' \u2014 third-party, descriptive, not our recommendation.'));
+  return card;
+}
 function peerCard(p){
   const rows=p.peers; if(!rows||!rows.length) return null;
   const t=p.trend||[];const last=t[t.length-1]||{};
@@ -327,6 +347,7 @@ function renderEN(p){
   {const vc=valuationCard(p); if(vc)box.append(vc);}
   {const qf=qualityCard(p); if(qf)box.append(qf);}
   {const pcomp=peerCard(p); if(pcomp)box.append(pcomp);}
+  {const ac=analystCard(p); if(ac)box.append(ac);}
 
   const er=p.earnings_read||{};
   if(er.earnings_8k||er.latest_10q||er.latest_10k){
