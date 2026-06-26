@@ -25,3 +25,4 @@ data/refresh_state.json
 .DS_Store
 .idea/
 .vscode/
+.vercel
