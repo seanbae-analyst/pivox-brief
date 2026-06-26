@@ -8,7 +8,7 @@ from __future__ import annotations
 
 _UP, _DN, _FLAT = "#5ec08a", "#e26d60", "#8b919b"
 _UP_BG, _DN_BG = "#15241d", "#261718"
-_INK, _SUB, _ACCENT = "#ECEAE3", "#8b919b", "#c6a063"
+_INK, _SUB, _ACCENT, _LINE = "#ECEAE3", "#8b919b", "#c6a063", "#1f2329"
 _MOOD_COL = {1: "#5ec08a", 2: "#8fb56a", 3: "#c6a063", 4: "#d6a44f", 5: "#e26d60"}
 
 
@@ -44,7 +44,8 @@ def _hot_chips(items):
     for i in items:
         x = i.get("chg1_pct")
         bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#161a20")
-        cells += (f'<div style="background:{bg};border-radius:10px;padding:9px 11px;">'
+        bd = _col(x) + "33"
+        cells += (f'<div style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
                   f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div></div>')
     return (f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px;">{cells}</div>')
@@ -56,20 +57,30 @@ def render_home_cards(b: dict) -> str:
     rbg = _DN_BG if "회피" in risk else (_UP_BG if "선호" in risk else "#161a20")
     P = []
 
+    # ── masthead — editorial Playfair tagline + dated kicker ──
+    P.append(
+        f'<div style="padding:4px 2px 18px;">'
+        f'<div style="font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:{_ACCENT};">'
+        f'시장심리 브리핑 · {_esc(b.get("as_of"))} 아침</div>'
+        f'<div style="font-family:var(--serif);font-weight:600;font-size:27px;color:{_INK};margin-top:8px;line-height:1.22;">'
+        f'Market psychology,<br>distilled every morning.</div>'
+        f'</div>'
+    )
+
     # ── 오늘의 시장 (mood + headline + 쉬운 풀이 + 그래서 뭐) ──
     m = b.get("mood")
-    P.append('<div class="card">')
+    P.append('<div class="card"><h3>오늘의 시장</h3>')
     if b.get("guide") and m:
         col = _MOOD_COL.get(m["level"], _SUB)
         dots = "".join(
-            f'<span style="display:inline-block;width:26px;height:7px;border-radius:3px;margin-right:3px;'
+            f'<span style="display:inline-block;width:30px;height:6px;border-radius:3px;margin-right:4px;'
             f'background:{col if i <= m["level"] else "#1f2329"};"></span>' for i in range(1, 6))
-        P.append(f'<div style="font-size:15px;font-weight:800;color:{col};margin-bottom:2px;">'
+        P.append(f'<div style="font-size:15px;font-weight:700;color:{col};margin-bottom:2px;">'
                  f'{m["emoji"]} 시장 기분: {_esc(m["label"])} '
                  f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {m["level"]} · {_esc(m["note"])}</span></div>'
-                 f'<div style="margin:4px 0 12px;">{dots}</div>')
-    P.append(f'<div style="display:inline-block;background:{rbg};color:{rcol};font-weight:800;'
-             f'font-size:18px;padding:7px 13px;border-radius:999px;letter-spacing:-.3px;">{_esc(risk)}</div>')
+                 f'<div style="margin:6px 0 14px;">{dots}</div>')
+    P.append(f'<div style="display:inline-block;background:{rbg};color:{rcol};font-weight:700;'
+             f'font-size:18px;padding:8px 14px;border-radius:8px;letter-spacing:-.2px;border:1px solid {rcol}44;">{_esc(risk)}</div>')
     if b.get("plain"):
         P.append(f'<p style="font-size:14px;color:{_INK};margin:10px 0 0;line-height:1.55;">{_esc(b["plain"])}</p>')
     if b.get("guide") and b.get("sowhat"):
@@ -124,5 +135,11 @@ def render_home_cards(b: dict) -> str:
             P.append(f'<div style="line-height:1.9;margin-top:4px;">{chips}</div>')
         P.append('</div>')
 
-    note = f'<div style="font-size:12px;color:{_SUB};margin:2px 0 18px;">아래에서 개별 종목도 검색해 보세요 ↓ · 데이터: yfinance · CFTC · FRED · 정보 제공용</div>'
-    return f'<div style="margin-bottom:8px;">{"".join(P)}</div>{note}'
+    src = f'<div style="font-size:11px;color:{_SUB};margin:0 2px 16px;font-family:var(--mono);">DATA · yfinance · CFTC · FRED · US Treasury · 정보 제공용, 투자자문 아님</div>'
+    divider = (
+        f'<div style="display:flex;align-items:center;gap:12px;margin:4px 2px 20px;">'
+        f'<div style="flex:1;height:1px;background:{_LINE};"></div>'
+        f'<div style="font:600 10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:{_ACCENT};">종목 깊이 보기 ↓</div>'
+        f'<div style="flex:1;height:1px;background:{_LINE};"></div></div>'
+    )
+    return f'<div style="margin-bottom:8px;">{"".join(P)}</div>{src}{divider}'
