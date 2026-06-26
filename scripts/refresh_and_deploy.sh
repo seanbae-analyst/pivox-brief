@@ -25,24 +25,24 @@ if command -v node >/dev/null 2>&1; then
   node --check /tmp/pb_refresh_check.js || { echo "JS check failed — abort, restoring last-good"; git checkout -- docs/pack.html 2>/dev/null; exit 1; }
 fi
 
-# 3. commit + push -> GitHub Pages auto-refreshes
-if [ -n "$(git status --porcelain docs/pack.html)" ]; then
-  git add docs/pack.html
-  git commit -q -m "chore(refresh): daily data refresh ($(date +%F))"
+# 3. Morning market-psychology brief — email + web page, on the same fresh data. Done BEFORE
+#    the commit/deploy so docs/brief.html ships in this run. Delivery is key-gated (inert
+#    without GMAIL_APP_PASSWORD/SENDGRID). Never blocks the refresh.
+./venv/bin/python scripts/brief.py --send --web --quiet || echo "brief step failed (non-fatal)"
+
+# 4. commit + push -> GitHub Pages auto-refreshes (pack + brief)
+if [ -n "$(git status --porcelain docs/pack.html docs/brief.html)" ]; then
+  git add docs/pack.html docs/brief.html
+  git commit -q -m "chore(refresh): daily data + brief ($(date +%F))"
   git push -q && git push -q origin feat/refined-signals:main && echo "pushed -> Pages"
 else
   echo "no data change"
 fi
 
-# 4. Vercel redeploy (local CLI auth — no token needed)
+# 5. Vercel redeploy (local CLI auth — no token needed)
 if command -v vercel >/dev/null 2>&1; then
   vercel --prod --yes --scope seanbae-analysts-projects >/dev/null 2>&1 \
     && echo "deployed -> Vercel" || echo "vercel deploy FAILED (CLI auth may have expired — run: vercel login)"
 fi
-
-# 5. Morning market-psychology brief — generate + email (delivery is key-gated; inert
-#    until SENDGRID_API_KEY + BRIEF_TO are set in .env, so this line is safe before keys).
-#    Runs on the same fresh data the refresh just rebuilt. Never blocks the refresh.
-./venv/bin/python scripts/brief.py --send --quiet || echo "brief step failed (non-fatal)"
 
 echo "===== done $(date '+%T') ====="

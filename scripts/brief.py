@@ -3,6 +3,7 @@
 
   python scripts/brief.py            # build, print, save md, persist snapshot
   python scripts/brief.py --send     # also email it (key-gated; inert without SENDGRID_API_KEY)
+  python scripts/brief.py --web      # also write docs/brief.html (served at /brief.html)
   python scripts/brief.py --check    # alerts only — exit 10 if a big event fired (for cron)
   python scripts/brief.py --quiet    # build + save but don't print body (cron-friendly)
 
@@ -49,6 +50,12 @@ def main() -> int:
     md = _OUT / f"brief_{brief['date']}.md"
     md.write_text(brief["text"] + "\n", encoding="utf-8")
     persist(brief)
+
+    if "--web" in args:
+        from engine.brief_html import render_page
+        web = Path(__file__).resolve().parent.parent / "docs" / "brief.html"
+        web.write_text(render_page(brief), encoding="utf-8")
+        print(f"[web] wrote {web}")
 
     if "--send" in args:
         from engine.notify import send_brief
