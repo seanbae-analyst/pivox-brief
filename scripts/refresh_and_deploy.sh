@@ -29,10 +29,11 @@ fi
 #    the commit/deploy so docs/brief.html ships in this run. Delivery is key-gated (inert
 #    without GMAIL_APP_PASSWORD/SENDGRID). Never blocks the refresh.
 ./venv/bin/python scripts/brief.py --send --web --quiet || echo "brief step failed (non-fatal)"
+./venv/bin/python scripts/build_settings_page.py || echo "settings page failed (non-fatal)"
 
-# 4. commit + push -> GitHub Pages auto-refreshes (pack + brief)
-if [ -n "$(git status --porcelain docs/pack.html docs/brief.html)" ]; then
-  git add docs/pack.html docs/brief.html
+# 4. commit + push -> GitHub Pages auto-refreshes (pack + brief + settings)
+if [ -n "$(git status --porcelain docs/pack.html docs/brief.html docs/settings.html)" ]; then
+  git add docs/pack.html docs/brief.html docs/settings.html
   git commit -q -m "chore(refresh): daily data + brief ($(date +%F))"
   git push -q && git push -q origin feat/refined-signals:main && echo "pushed -> Pages"
 else

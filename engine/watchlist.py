@@ -8,11 +8,16 @@ the shape a future homepage picker would write — keep it simple and web-friend
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+
+import requests
 
 from engine.themes import THEMES
 
 _PATH = Path(__file__).resolve().parent.parent / "data" / "watchlist.json"
+_TABLE = "brief_settings"
+_ROW = "default"  # single-user app → one settings row
 
 _LEVELS = ("초보", "보통", "고수")  # how much hand-holding the brief gives
 
@@ -23,13 +28,44 @@ DEFAULT = {
 }
 
 
-def load() -> dict:
+def _validate(d: dict) -> dict:
+    themes = [t for t in d.get("themes", []) if t in THEMES] or DEFAULT["themes"]
+    custom = [s for s in d.get("custom", []) if isinstance(s, str) and s.strip()]
+    level = d.get("explain_level") if d.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
+    return {"themes": themes, "custom": custom, "explain_level": level}
+
+
+def _supabase_env() -> tuple[str, str] | None:
+    url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_ANON_KEY")
+    return (url.rstrip("/"), key) if (url and key) else None
+
+
+def _remote_load() -> dict | None:
+    """Read the selection the public picker page saved to Supabase. None if unconfigured/down."""
+    env = _supabase_env()
+    if not env:
+        return None
+    url, key = env
     try:
-        d = json.loads(_PATH.read_text(encoding="utf-8"))
-        themes = [t for t in d.get("themes", []) if t in THEMES] or DEFAULT["themes"]
-        custom = [s for s in d.get("custom", []) if isinstance(s, str) and s.strip()]
-        level = d.get("explain_level") if d.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
-        return {"themes": themes, "custom": custom, "explain_level": level}
+        r = requests.get(
+            f"{url}/rest/v1/{_TABLE}",
+            params={"id": f"eq.{_ROW}", "select": "themes,custom,explain_level"},
+            headers={"apikey": key, "Authorization": f"Bearer {key}"}, timeout=8,
+        )
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def load() -> dict:
+    # priority: Supabase (homepage picker) → local file (CLI) → DEFAULT
+    remote = _remote_load()
+    if remote:
+        return _validate(remote)
+    try:
+        return _validate(json.loads(_PATH.read_text(encoding="utf-8")))
     except Exception:
         return dict(DEFAULT)
 

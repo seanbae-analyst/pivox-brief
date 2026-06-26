@@ -261,6 +261,7 @@ def render_page(b: dict) -> str:
         f'<div style="max-width:600px;margin:0 auto;padding:14px 12px 0;'
         f'font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:12px;color:{_SUB};">'
         f'<a href="/" style="color:{_DN};text-decoration:none;">← 리서치팩</a>'
+        f'<a href="/settings.html" style="color:{_DN};text-decoration:none;margin-left:14px;">⚙️ 설정</a>'
         f'<span style="float:right;">매일 아침 자동 갱신 · 정보 제공용</span></div>'
     )
     return (
