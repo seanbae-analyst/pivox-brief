@@ -1,6 +1,22 @@
-"""Morning brief logic — alert triggers + tilt classifier. Pure, offline (no network)."""
+"""Morning brief logic — alert triggers + tilt classifier + readability reads. Offline."""
 
-from engine.brief import _tilt, detect_alerts
+from engine.brief import _kr_read, _tilt, _us_rotation, detect_alerts
+
+
+def _sec(label, group, chg5):
+    return {"label": label, "group": group, "chg5_pct": chg5}
+
+
+def test_us_rotation_money_flow():
+    us = [_sec("반도체·AI", "섹터", 2.1), _sec("2차전지·EV", "섹터", -5.6)]
+    assert "반도체·AI" in _us_rotation(us) and "2차전지·EV" in _us_rotation(us)
+
+
+def test_kr_read_broad_weakness_flags_worst():
+    kr = [_sec("코스피", "지수", -7.1), _sec("코스닥", "지수", -11.9),
+          _sec("현대차", "자동차", -21.6), _sec("삼성전자", "반도체", -4.1)]
+    out = _kr_read(kr)
+    assert "전반 약세" in out and "현대차" in out
 
 
 def _flow(**kw):

@@ -18,6 +18,7 @@ from datetime import date
 from pathlib import Path
 
 from engine.market import _daily_flow, _positioning, _rates, _regime_read
+from engine.sectors import build_sectors
 
 _STATE = Path(__file__).resolve().parent.parent / "data" / "brief_state.json"
 
@@ -54,6 +55,60 @@ def _tilt(flow: dict) -> str:
     if sig <= -2:
         return "위험회피 우위 (주식↓·변동성↑·크레딧 부담↑)"
     return "혼조 / 방향성 불명확"
+
+
+_PLAIN = {
+    "위험선호": "투자자들이 자신감 있게 위험을 감수하는 분위기예요 (주식에 돈이 들어옴).",
+    "위험회피": "투자자들이 불안해서 주식보다 안전한 곳으로 돈을 옮기는 분위기예요 (몸 사리는 중).",
+    "혼조": "뚜렷한 방향 없이 위아래로 엇갈리는 분위기예요.",
+}
+
+
+def _plain_headline(headline: str) -> str:
+    for k, v in _PLAIN.items():
+        if headline.startswith(k):
+            return v
+    return ""
+
+
+def _arrow(x) -> str:
+    if x is None:
+        return "▪"
+    return "🔺" if x > 0 else ("🔻" if x < 0 else "▪")
+
+
+def _move_row(items: list[dict]) -> str:
+    return "  ".join(f"{_arrow(i['chg5_pct'])}{i['label']} {i['chg5_pct']:+.1f}%" for i in items)
+
+
+def _us_rotation(us: list[dict]) -> str | None:
+    secs = [i for i in us if i["group"] == "섹터"]
+    if not secs:
+        return None
+    top = max(secs, key=lambda i: i["chg5_pct"])
+    bot = min(secs, key=lambda i: i["chg5_pct"])
+    if top["chg5_pct"] > 0 and bot["chg5_pct"] < 0:
+        return f"{top['label']}는 오르고 {bot['label']}는 빠짐 — 돈이 {top['label']} 쪽으로 쏠리는 흐름."
+    if top["chg5_pct"] <= 0:
+        return f"섹터 전반 약세 (제일 부진: {bot['label']} {bot['chg5_pct']:+.1f}%)."
+    return f"섹터 전반 강세 (제일 강세: {top['label']} {top['chg5_pct']:+.1f}%)."
+
+
+def _kr_read(kr: list[dict]) -> str | None:
+    by = {i["label"]: i for i in kr}
+    ks, kq = by.get("코스피"), by.get("코스닥")
+    if not (ks and kq):
+        return None
+    stocks = [i for i in kr if i["group"] in ("반도체", "2차전지", "자동차")]
+    worst = min(stocks, key=lambda i: i["chg5_pct"], default=None) if stocks else None
+    if ks["chg5_pct"] < 0 and kq["chg5_pct"] < 0:
+        t = f"한국 증시 전반 약세 (코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}%)."
+        if worst and worst["chg5_pct"] < -5:
+            t += f" 특히 {worst['label']}({worst['chg5_pct']:+.1f}%)이 많이 빠짐."
+        return t
+    if ks["chg5_pct"] > 0 and kq["chg5_pct"] > 0:
+        return f"한국 증시 전반 강세 (코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}%)."
+    return f"코스피 {ks['chg5_pct']:+.1f}%, 코스닥 {kq['chg5_pct']:+.1f}% — 대형주·중소형주 방향이 엇갈림."
 
 
 def _load_state() -> dict:
@@ -103,6 +158,7 @@ def build_brief(lang: str = "ko") -> dict:
     positioning = _positioning()
     flow_list = _daily_flow() or []
     flow = {f["label"]: f for f in flow_list}
+    sectors = build_sectors()
     prior = _load_state()
 
     pos_ds = [p["days_old"] for p in positioning if p.get("days_old") is not None]
@@ -131,35 +187,71 @@ def build_brief(lang: str = "ko") -> dict:
     def v(lbl):
         f = flow.get(lbl); return f.get("value") if f else None
 
+    us = (sectors or {}).get("us") or []
+    kr = (sectors or {}).get("kr") or []
+    us_idx = [i for i in us if i["group"] == "지수"]
+    us_sec = [i for i in us if i["group"] == "섹터"]
+    kr_idx = [i for i in kr if i["group"] == "지수"]
+    kr_fx = next((i for i in kr if i["group"] == "환율"), None)
+    kr_stk = [i for i in kr if i["group"] in ("반도체", "2차전지", "자동차")]
+
     L: list[str] = []
     L.append(f"📊 시장심리 브리핑 — {as_of} 아침")
     L.append("")
-    L.append(f"■ 오늘 한 줄: {headline}")
+    L.append(f"오늘 한 줄: {headline}")
+    plain = _plain_headline(headline)
+    if plain:
+        L.append(f"쉬운 풀이: {plain}")
     if alerts:
         L.append("")
         L.append("🚨 큰 움직임:")
         for a in alerts:
             L.append(f"   • {a}")
+
+    # ── 🇺🇸 미국장 ──
     L.append("")
-    L.append("■ 어제까지 테이프 (FRED 일별, T+1)")
-    L.append(f"   • 주식    S&P {_pct(g('S&P 500','chg5_pct'))} · 나스닥 {_pct(g('Nasdaq','chg5_pct'))} (5일)")
-    L.append(f"   • 변동성  VIX {_num(v('VIX'))} ({_sgn(g('VIX','chg5'))} 5일)")
-    L.append(f"   • 크레딧  HY 스프레드 {_num(v('HY spread'),2)}% ({_bp(g('HY spread','chg5_bp'))} 5일)")
-    L.append(f"   • 금리/환 10Y {_num(v('UST 10Y'),2)}% ({_bp(g('UST 10Y','chg5_bp'))}) · 달러 {_pct(g('US dollar','chg5_pct'))}")
-    if rates:
-        L.append("")
-        L.append(f"■ 금리 레짐: 커브 {rates.get('curve')} (10y-2y {rates.get('spread_10y_2y'):+}) · breakeven {rates.get('breakeven10')}%")
+    L.append("━━ 🇺🇸 미국장 (어제 마감 기준, 괄호는 5일 변화) ━━")
+    if us_idx:
+        L.append("지수   " + _move_row(us_idx))
+    if us_sec:
+        L.append("섹터   " + _move_row(us_sec))
+    rot = _us_rotation(us)
+    if rot:
+        L.append(f"한눈에: {rot}")
+    if not us:  # yfinance down → fall back to the FRED tape so the section isn't empty
+        L.append(f"지수   S&P {_pct(g('S&P 500','chg5_pct'))} · 나스닥 {_pct(g('Nasdaq','chg5_pct'))} (5일)")
+
+    # ── 🇰🇷 한국장 ──
     L.append("")
-    L.append(f"■ 포지셔닝 (CFTC, ~{lag}일 지연)")
-    if extremes:
-        L.append("   • 쏠림 극단: " + " · ".join(f"{p['market']}({p['extreme']})" for p in extremes))
-    if vix:
-        L.append(f"   • VIX {'숏(안일)' if vix['net'] < 0 else '롱(헤지)'} {vix['pctile']}%ile")
+    L.append("━━ 🇰🇷 한국장 (오늘 마감 기준, 괄호는 5일 변화) ━━")
+    if kr_idx:
+        L.append("지수   " + _move_row(kr_idx))
+    if kr_fx:
+        won = "원화 약세(달러 비쌈)" if (kr_fx["chg5_pct"] or 0) > 0 else "원화 강세(달러 쌈)"
+        L.append(f"환율   원/달러 {kr_fx['last']:,.0f}원 ({kr_fx['chg5_pct']:+.1f}% → {won})")
+    if kr_stk:
+        L.append("대표주 " + _move_row(kr_stk))
+    kread = _kr_read(kr)
+    if kread:
+        L.append(f"한눈에: {kread}")
+    if not kr:
+        L.append("(한국장 데이터 일시 불가 — yfinance 응답 없음)")
+
     if watch:
         L.append("")
         L.append(f"⚠️ 주목: {watch}")
+
+    # ── 심화(전문) — 어려운 건 맨 아래로 ──
     L.append("")
-    L.append("데이터: CFTC · US Treasury · FRED · Finnhub")
+    L.append("━━ 심화 (관심 있을 때만) ━━")
+    L.append(f"· 변동성·신용: VIX {_num(v('VIX'))}({_sgn(g('VIX','chg5'))} 5일) · HY 스프레드 {_num(v('HY spread'),2)}%({_bp(g('HY spread','chg5_bp'))} 5일, 벌어질수록 신용 불안)")
+    if rates:
+        L.append(f"· 금리: 美 10년 {_num(v('UST 10Y'),2)}% · 커브 {rates.get('curve')}(정상이면 경기침체 신호 아님)")
+    if extremes:
+        L.append("· 선물 쏠림(반전 주의): " + " · ".join(f"{p['market']}({p['extreme']})" for p in extremes) + f" — CFTC, ~{lag}일 지연")
+
+    L.append("")
+    L.append("데이터: yfinance(지수·섹터·종목) · CFTC · FRED · US Treasury")
     L.append("목표주가·리테일심리 = 미표시(라이선스)")
     text = "\n".join(L)
 
