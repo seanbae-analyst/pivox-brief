@@ -30,6 +30,14 @@ def _safe_fear_greed():
     except Exception:
         return None
 
+
+def _safe_korea():
+    try:
+        from engine.psych import korea_sentiment
+        return korea_sentiment()
+    except Exception:
+        return None
+
 _STATE = Path(__file__).resolve().parent.parent / "data" / "brief_state.json"
 
 # big-event thresholds — 1-day moves on the freshest daily (T+1) series
@@ -192,6 +200,7 @@ def build_brief(lang: str = "ko") -> dict:
     flow = {f["label"]: f for f in flow_list}
     sectors = build_sectors()
     fg = _safe_fear_greed()
+    korea = _safe_korea()
     prior = _load_state()
 
     level = load_watchlist().get("explain_level", "초보")
@@ -260,8 +269,12 @@ def build_brief(lang: str = "ko") -> dict:
     # ── 😱 공포·탐욕 지수 (0~100 합성) ──
     if fg:
         L.append("")
-        L.append(f"━━ 공포·탐욕 지수: {fg['score']}/100 ({fg['label']}) ━━")
+        dtxt = f" · 어제比 {fg['delta']:+d}" if fg.get("delta") else ""
+        L.append(f"━━ 공포·탐욕 지수: {fg['score']}/100 ({fg['label']}){dtxt} ━━")
         L.append("  " + " · ".join(f"{c['name']} {c['score']}" for c in fg["components"]))
+    if korea:
+        L.append(f"  🇰🇷 한국 시장심리: {korea['score']}/100 ({korea['label']}) — "
+                 + " · ".join(f"{c['name']} {c['score']}" for c in korea["components"]))
 
     # ── 🔥 핫 종목 (오늘 제일 많이 움직인) ──
     if us_hot or kr_hot:
@@ -347,7 +360,7 @@ def build_brief(lang: str = "ko") -> dict:
         "us_rotation": rot, "kr_read": kread,
         "level": level, "teach": teach, "guide": guide,
         "mood": the_mood, "sowhat": sowhat, "term_of_day": tod, "glossary": glossary,
-        "fear_greed": fg,
+        "fear_greed": fg, "korea": korea,
         "text": text, "_snapshot": snap,
     }
     from engine.brief_html import render_html

@@ -31,3 +31,6 @@ data/watchlist.json
 .idea/
 .vscode/
 .vercel
+
+# F&G daily history (machine-local, grows over time)
+data/fng_history.json

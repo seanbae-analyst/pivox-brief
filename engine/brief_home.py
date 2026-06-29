@@ -6,6 +6,8 @@ that inherit pack.html's existing CSS (.card, table, badges), injected by script
 """
 from __future__ import annotations
 
+import math
+
 _UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#94a3b8"
 _UP_BG, _DN_BG = "#2a1c1f", "#17222e"
 _INK, _SUB, _ACCENT, _LINE = "#e2e8f0", "#94a3b8", "#d4a558", "#334155"
@@ -93,33 +95,102 @@ def _fg_zone(s):
             else "#cf9050" if s <= 75 else "#cf6b6b")
 
 
+def _polar(cx, cy, r, deg):
+    a = math.radians(deg)
+    return cx + r * math.cos(a), cy - r * math.sin(a)
+
+
+def _gauge(score, col, w=210, h=124):
+    """Semicircle dial — colored zones (fear→greed) + needle at score."""
+    cx, cy, r = w / 2, h - 14, w / 2 - 16
+    zones = [(0, 25, "#7AA0C8"), (25, 45, "#8aa0a8"), (45, 55, "#d4a558"),
+             (55, 75, "#cf9050"), (75, 100, "#cf6b6b")]
+    arcs = ""
+    for lo, hi, c in zones:
+        d0 = 180 * (1 - lo / 100)
+        d1 = 180 * (1 - hi / 100)
+        x0, y0 = _polar(cx, cy, r, d0)
+        x1, y1 = _polar(cx, cy, r, d1)
+        arcs += (f'<path d="M {x0:.1f} {y0:.1f} A {r} {r} 0 0 1 {x1:.1f} {y1:.1f}" '
+                 f'stroke="{c}" stroke-width="11" fill="none"/>')
+    deg = 180 * (1 - score / 100)
+    nx, ny = _polar(cx, cy, r - 6, deg)
+    return (
+        f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" style="display:block;margin:2px auto 0;">'
+        f'{arcs}'
+        f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" stroke="{col}" stroke-width="3" stroke-linecap="round"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="6" fill="{col}"/>'
+        f'<text x="{cx}" y="{cy - r - 2}" text-anchor="middle" '
+        f'style="font:700 30px var(--serif);fill:{col};">{score}</text></svg>'
+    )
+
+
+def _trend_spark(vals, w=180, h=30):
+    if not vals or len(vals) < 3:
+        return ""
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1
+    n = len(vals)
+    pts = " ".join(f"{round(j / (n - 1) * w, 1)},{round(h - (v - lo) / rng * (h - 4) - 2, 1)}"
+                   for j, v in enumerate(vals))
+    return (f'<svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
+            f'style="display:block;margin-top:2px;"><polyline points="{pts}" fill="none" '
+            f'stroke="{_ACCENT}" stroke-width="1.5" stroke-linejoin="round" opacity="0.85"/></svg>')
+
+
+def _components(comps):
+    out = ""
+    for c in comps:
+        cc = _fg_zone(c["score"])
+        out += (
+            f'<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">'
+            f'<div style="flex:0 0 96px;font-size:12px;color:{_SUB};">{_esc(c["name"])}</div>'
+            f'<div style="flex:1;height:6px;border-radius:3px;background:#1e293b;position:relative;">'
+            f'<div style="position:absolute;left:0;top:0;bottom:0;width:{c["score"]}%;background:{cc};border-radius:3px;"></div></div>'
+            f'<div style="flex:0 0 28px;text-align:right;font-size:12px;color:{_INK};{_MONO}">{c["score"]}</div></div>')
+    return out
+
+
 def _fg_card(fg):
     if not fg:
         return ""
     s, col = fg["score"], _fg_zone(fg["score"])
-    comps = ""
-    for c in fg["components"]:
-        cc = _fg_zone(c["score"])
-        comps += (
-            f'<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">'
-            f'<div style="flex:0 0 92px;font-size:12px;color:{_SUB};">{_esc(c["name"])}</div>'
-            f'<div style="flex:1;height:6px;border-radius:3px;background:#1e293b;position:relative;">'
-            f'<div style="position:absolute;left:0;top:0;bottom:0;width:{c["score"]}%;background:{cc};border-radius:3px;"></div></div>'
-            f'<div style="flex:0 0 26px;text-align:right;font-size:12px;color:{_INK};{_MONO}">{c["score"]}</div></div>')
+    d = fg.get("delta")
+    delta = ""
+    if d is not None and d != 0:
+        dc = "#cf6b6b" if d > 0 else "#7AA0C8"
+        delta = (f'<span style="font-size:13px;font-weight:700;color:{dc};{_MONO}">'
+                 f'{"▲" if d > 0 else "▼"} 어제比 {d:+d}</span>')
+    trend = ""
+    if fg.get("trend"):
+        trend = (f'<div style="margin-top:8px;"><div style="font-size:10px;color:{_SUB};'
+                 f'{_MONO};letter-spacing:.08em;">최근 추세</div>{_trend_spark(fg["trend"])}</div>')
     return (
         f'<div class="card"><h3>공포 · 탐욕 지수</h3>'
-        f'<div style="display:flex;align-items:baseline;gap:12px;">'
-        f'<div style="font-family:var(--serif);font-size:46px;font-weight:700;color:{col};line-height:1;">{s}</div>'
-        f'<div style="font-size:18px;font-weight:700;color:{col};">{_esc(fg["label"])}</div>'
+        f'{_gauge(s, col)}'
+        f'<div style="text-align:center;margin:2px 0 2px;">'
+        f'<span style="font-size:17px;font-weight:700;color:{col};">{_esc(fg["label"])}</span> '
+        f'<span style="font-size:11px;color:{_SUB};{_MONO}">/ 100</span>  {delta}</div>'
+        f'<div style="display:flex;justify-content:space-between;font:600 10px var(--mono);color:{_SUB};letter-spacing:.06em;margin:6px 4px 14px;">'
+        f'<span>극단적 공포</span><span>탐욕</span></div>'
+        f'{_components(fg["components"])}'
+        f'{trend}'
+        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;">CNN식 9요인 합성 · 무료/공식(FRED·CFTC·crypto·옵션)</div></div>'
+    )
+
+
+def _kr_card(kr):
+    if not kr:
+        return ""
+    s, col = kr["score"], _fg_zone(kr["score"])
+    return (
+        f'<div class="card"><h3>🇰🇷 한국 시장심리</h3>'
+        f'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">'
+        f'<div style="font-family:var(--serif);font-size:38px;font-weight:700;color:{col};line-height:1;">{s}</div>'
+        f'<div style="font-size:16px;font-weight:700;color:{col};">{_esc(kr["label"])}</div>'
         f'<div style="font-size:11px;color:{_SUB};{_MONO}">/ 100</div></div>'
-        f'<div style="position:relative;height:8px;border-radius:5px;margin:12px 0 6px;'
-        f'background:linear-gradient(90deg,#7AA0C8,#86a8a0,#d4a558,#cf9050,#cf6b6b);">'
-        f'<div style="position:absolute;top:-4px;left:{s}%;width:16px;height:16px;border-radius:50%;'
-        f'background:{col};border:3px solid #111827;transform:translateX(-50%);box-shadow:0 0 0 1px {col}cc;"></div></div>'
-        f'<div style="display:flex;justify-content:space-between;font:600 10px var(--mono);color:{_SUB};letter-spacing:.08em;margin-bottom:14px;">'
-        f'<span>극단적 공포</span><span>중립</span><span>극단적 탐욕</span></div>'
-        f'{comps}'
-        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;">CNN식 6요인 합성 · 무료/공식 데이터(FRED·CFTC·crypto)</div></div>'
+        f'{_components(kr["components"])}'
+        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;line-height:1.5;">{_esc(kr.get("blind_spot", ""))}</div></div>'
     )
 
 
@@ -179,8 +250,9 @@ def render_home_cards(b: dict) -> str:
                  f'<b style="color:{rcol};">그래서 뭐?</b> {_esc(b["sowhat"])}</p>')
     P.append('</div>')
 
-    # ── 공포·탐욕 지수 (centerpiece) ──
+    # ── 공포·탐욕 지수 (centerpiece) + 한국 시장심리 ──
     P.append(_fg_card(b.get("fear_greed")))
+    P.append(_kr_card(b.get("korea")))
 
     # ── 🔥 핫 종목 ──
     us_hot, kr_hot = b.get("us_hot") or [], b.get("kr_hot") or []
