@@ -183,12 +183,26 @@ def _kr_card(kr):
     if not kr:
         return ""
     s, col = kr["score"], _fg_zone(kr["score"])
+    ff = kr.get("foreign") or {}
+    diverge = ""
+    if ff.get("total_tril") is not None and ff.get("retail_tril") is not None:
+        f_t, r_t = ff["total_tril"], ff["retail_tril"]
+        fc = "#cf6b6b" if f_t > 0 else "#7AA0C8"   # 매수=빨강(KR), 매도=파랑
+        rc = "#cf6b6b" if r_t > 0 else "#7AA0C8"
+        tag = ("  <b style=\"color:#d4a558;\">⚖ 개미가 받치는 중</b>" if ff.get("divergence") else "")
+        diverge = (
+            f'<div style="margin:6px 0 4px;padding:10px 12px;background:#0f1626;border-radius:10px;'
+            f'border-left:3px solid {_ACCENT};font-size:13px;color:{_INK};{_MONO}">'
+            f'외국인 <span style="color:{fc};font-weight:700;">{f_t:+.1f}조</span> · '
+            f'개인 <span style="color:{rc};font-weight:700;">{r_t:+.1f}조</span> '
+            f'<span style="font-size:11px;color:{_SUB};">(5일, KIS 실측)</span>{tag}</div>')
     return (
         f'<div class="card"><h3>🇰🇷 한국 시장심리</h3>'
         f'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">'
         f'<div style="font-family:var(--serif);font-size:38px;font-weight:700;color:{col};line-height:1;">{s}</div>'
         f'<div style="font-size:16px;font-weight:700;color:{col};">{_esc(kr["label"])}</div>'
         f'<div style="font-size:11px;color:{_SUB};{_MONO}">/ 100</div></div>'
+        f'{diverge}'
         f'{_components(kr["components"])}'
         f'<div style="font-size:11px;color:{_SUB};margin-top:10px;line-height:1.5;">{_esc(kr.get("blind_spot", ""))}</div></div>'
     )

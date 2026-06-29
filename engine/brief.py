@@ -275,6 +275,10 @@ def build_brief(lang: str = "ko") -> dict:
     if korea:
         L.append(f"  🇰🇷 한국 시장심리: {korea['score']}/100 ({korea['label']}) — "
                  + " · ".join(f"{c['name']} {c['score']}" for c in korea["components"]))
+        kff = korea.get("foreign") or {}
+        if kff.get("total_tril") is not None and kff.get("retail_tril") is not None:
+            tag = " (개미가 받치는 중)" if kff.get("divergence") else ""
+            L.append(f"     ↳ 외국인 {kff['total_tril']:+.1f}조 ↔ 개인 {kff['retail_tril']:+.1f}조 (5일, KIS 실측){tag}")
 
     # ── 🔥 핫 종목 (오늘 제일 많이 움직인) ──
     if us_hot or kr_hot:

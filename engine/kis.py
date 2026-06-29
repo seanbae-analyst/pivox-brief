@@ -92,17 +92,19 @@ def foreign_flow_kr(days: int = 5) -> dict | None:
         return None
     base = _base()
     bought = total = n = 0
+    retail_total = 0          # 개인(리테일) 순매수 합계 — same call, the prsn_* field
     detail = []
     for name, code in _BASKET:
         rows = _investor(base, tok, key, sec, code)
         # rows are newest-first daily; keep finalized (non-empty foreign value) ones
-        vals = [_f(r.get("frgn_ntby_tr_pbmn")) for r in rows]
-        vals = [v for v in vals if v is not None][:days]
-        if not vals:
+        fin = [r for r in rows if _f(r.get("frgn_ntby_tr_pbmn")) is not None][:days]
+        if not fin:
             continue
-        net = sum(vals)               # KRW (단위: 백만원 in KIS tr_pbmn)
+        net = sum(_f(r.get("frgn_ntby_tr_pbmn")) for r in fin)   # 외국인 순매수 (백만원)
+        ret = sum(_f(r.get("prsn_ntby_tr_pbmn")) or 0 for r in fin)  # 개인 순매수 (백만원)
         n += 1
         total += net
+        retail_total += ret
         if net > 0:
             bought += 1
         detail.append({"name": name, "net_krw_mn": round(net)})
@@ -119,6 +121,8 @@ def foreign_flow_kr(days: int = 5) -> dict | None:
         "breadth": round(breadth), "buy_count": bought, "n": n,
         "total_krw_mn": round(total),
         "total_tril": round(total / 1_000_000, 1),     # 조원
+        "retail_tril": round(retail_total / 1_000_000, 1),  # 개인 순매수 (조원)
+        "divergence": (total < 0 and retail_total > 0),     # 외국인 매도 ↔ 개인 매수 (개미가 받침)
         "days": days,
         "detail": sorted(detail, key=lambda d: d["net_krw_mn"]),
     }
