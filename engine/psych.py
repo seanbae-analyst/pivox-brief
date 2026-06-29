@@ -276,11 +276,26 @@ def korea_sentiment() -> dict | None:
         rets = [float(ks.iloc[i]) / float(ks.iloc[i - 1]) - 1 for i in range(len(ks) - 20, len(ks))]
         vol = statistics.pstdev(rets) * math.sqrt(252) * 100
         comp.append(("코스피 변동성", round(_lerp(vol, 35, 10, 0, 100)), f"연율 {vol:.0f}%"))
+
+    # 외국인 수급 — KR 심리의 최강 신호. KIS 공식 API(read-only) — 있으면 추가.
+    ff = None
+    try:
+        from engine.kis import foreign_flow_kr
+        ff = foreign_flow_kr(5)
+    except Exception:
+        ff = None
+    if ff:
+        comp.append(("외국인 수급", ff["score"],
+                     f"{ff['buy_count']}/{ff['n']}개 순매수 · 5일 {ff['total_tril']:+.1f}조"))
+
     if not comp:
         return None
     score = round(sum(c[1] for c in comp) / len(comp))
+    note = ("외국인 수급 = KIS 공식 API(실측)" if ff
+            else "외국인 수급·VKOSPI 실시간은 KRX 독점 — 무료 대용 지표로 추정")
     return {
         "score": score, "label": _label(score),
         "components": [{"name": n, "score": s, "note": nt} for n, s, nt in comp],
-        "blind_spot": "외국인 수급·VKOSPI 실시간은 KRX 독점 — 무료 대용 지표로 추정한 값",
+        "foreign": ff,
+        "blind_spot": note,
     }
