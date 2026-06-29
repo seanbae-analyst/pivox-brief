@@ -174,6 +174,10 @@ def render_html(b: dict) -> str:
     P.append(f'<div style="font-size:22px;font-weight:800;color:{_INK};letter-spacing:-.5px;">'
              f'📊 시장심리 브리핑</div>'
              f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{_esc(b.get("as_of"))} · 아침</div>')
+    _ms = b.get("market_status") or {}
+    if _ms.get("banner"):
+        P.append(f'<div style="margin:0 0 14px;padding:9px 13px;background:#1e293b;border-radius:9px;'
+                 f'border-left:3px solid {_DN};font-size:13px;color:{_INK};">📅 {_esc(_ms["banner"])}</div>')
 
     # hero band — headline + plain + (beginner) so-what + thermometer
     guide = b.get("guide")

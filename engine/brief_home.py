@@ -237,6 +237,12 @@ def render_home_cards(b: dict) -> str:
         f'<div style="height:2px;width:48px;background:{_ACCENT};opacity:.8;margin-top:16px;border-radius:1px;"></div>'
         f'</div>'
     )
+    _ms = b.get("market_status") or {}
+    if _ms.get("banner"):
+        P.append(
+            f'<div style="margin:0 2px 16px;padding:9px 13px;background:#1e293b;border-radius:9px;'
+            f'border-left:3px solid {_ACCENT};font-size:13px;color:{_INK};">📅 {_esc(_ms["banner"])}</div>'
+        )
     P.append(_stat_strip(b))
 
     # ── 오늘의 시장 (mood + headline + 쉬운 풀이 + 그래서 뭐) ──

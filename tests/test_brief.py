@@ -1,6 +1,29 @@
 """Morning brief logic — alert triggers + tilt classifier + readability reads. Offline."""
 
-from engine.brief import _kr_read, _tilt, _us_rotation, detect_alerts
+from datetime import date
+
+from engine.brief import _kr_read, _tilt, _us_rotation, detect_alerts, market_status
+
+
+def test_market_status_weekday_open():
+    ms = market_status(date(2026, 6, 29), "2026-06-26", "2026-06-29")  # Mon: US Fri T+1, KR today
+    assert ms["banner"] is None and ms["kr_open"] and ms["us_open"]
+
+
+def test_market_status_weekend():
+    for d in (date(2026, 6, 27), date(2026, 6, 28)):  # Sat, Sun
+        ms = market_status(d, "2026-06-26", "2026-06-26")
+        assert "주말 휴장" in ms["banner"] and not ms["kr_open"] and not ms["us_open"]
+
+
+def test_market_status_kr_holiday():
+    ms = market_status(date(2026, 6, 29), "2026-06-26", "2026-06-26")  # KR data stale, US fresh
+    assert not ms["kr_open"] and ms["us_open"] and "한국장 휴장" in ms["banner"]
+
+
+def test_market_status_us_holiday():
+    ms = market_status(date(2026, 6, 30), "2026-06-26", "2026-06-30")  # US biz-gap >1
+    assert not ms["us_open"] and ms["kr_open"] and "미국장 휴장" in ms["banner"]
 
 
 def _sec(label, group, chg5):

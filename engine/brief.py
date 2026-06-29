@@ -14,7 +14,7 @@ not on standing conditions, so the same crowded trade doesn't re-alert every mor
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from engine.glossary import glosses_for, mood, term_of_day
@@ -37,6 +37,56 @@ def _safe_korea():
         return korea_sentiment()
     except Exception:
         return None
+
+
+_WD = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def _parse_date(s):
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(str(s)[:10], fmt).date()
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
+def _bizdays(d0, d1) -> int:
+    """Weekdays strictly after d0 up to and including d1."""
+    n, cur = 0, d0
+    while cur < d1:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            n += 1
+    return n
+
+
+def market_status(today, us_as_of, kr_as_of) -> dict:
+    """Calendar-free: infer open/closed from the data's own as_of dates + weekday.
+    KR close data is same-day → closed if KR as_of < today. US is T+1 → closed-recently
+    if the business-day gap to its as_of exceeds 1 (catches weekday holidays too)."""
+    wd = today.weekday()
+    weekend = wd >= 5
+    kr_d, us_d = _parse_date(kr_as_of), _parse_date(us_as_of)
+    kr_closed = weekend or (kr_d is not None and kr_d < today)
+    us_closed = weekend or (us_d is not None and _bizdays(us_d, today) > 1)
+    if weekend:
+        banner = f"주말 휴장 — 새 데이터 없음, 마지막 거래일 기준"
+    elif kr_closed and us_closed:
+        banner = "휴장일 — 마지막 거래일 종가 기준"
+    elif kr_closed:
+        banner = "한국장 휴장 — 한국 데이터는 마지막 거래일 기준"
+    elif us_closed:
+        banner = "미국장 휴장 — 미국 데이터는 직전 거래일 기준"
+    else:
+        banner = None
+    return {
+        "weekday": _WD[wd], "weekend": weekend,
+        "kr_open": not kr_closed, "us_open": not us_closed,
+        "kr_label": ("정상" if not kr_closed else "휴장"),
+        "us_label": ("정상" if not us_closed else "휴장"),
+        "banner": banner,
+    }
 
 _STATE = Path(__file__).resolve().parent.parent / "data" / "brief_state.json"
 
@@ -210,6 +260,8 @@ def build_brief(lang: str = "ko") -> dict:
     pos_ds = [p["days_old"] for p in positioning if p.get("days_old") is not None]
     lag = min(pos_ds) if pos_ds else None
     as_of = (flow_list[0]["as_of"] if flow_list else None) or (rates or {}).get("as_of") or str(date.today())
+    ms = market_status(date.today(), (sectors or {}).get("us_as_of") or as_of,
+                       (sectors or {}).get("kr_as_of"))
     headline = _tilt(flow)
     the_mood = mood(flow_list, rates)
     tod = term_of_day(as_of)
@@ -251,6 +303,8 @@ def build_brief(lang: str = "ko") -> dict:
 
     L: list[str] = []
     L.append(f"📊 시장심리 브리핑 — {as_of} 아침")
+    if ms.get("banner"):
+        L.append(f"📅 {ms['banner']}")
     L.append("")
     if guide:
         L.append(f"오늘 시장 기분: {the_mood['emoji']} {the_mood['label']} (5단계 중 {the_mood['level']}) — {the_mood['note']}")
@@ -291,7 +345,8 @@ def build_brief(lang: str = "ko") -> dict:
 
     # ── 🇺🇸 미국장 ──
     L.append("")
-    L.append("━━ 🇺🇸 미국장 (어제 마감 기준, 괄호는 5일 변화) ━━")
+    _us_ao = (sectors or {}).get("us_as_of") or as_of
+    L.append(f"━━ 🇺🇸 미국장 ({_us_ao} 마감{'' if ms['us_open'] else ' · 휴장'}, 괄호는 5일 변화) ━━")
     if us_idx:
         L.append("지수   " + _move_row(us_idx))
     if us_sec:
@@ -304,7 +359,8 @@ def build_brief(lang: str = "ko") -> dict:
 
     # ── 🇰🇷 한국장 ──
     L.append("")
-    L.append("━━ 🇰🇷 한국장 (오늘 마감 기준, 괄호는 5일 변화) ━━")
+    _kr_ao = (sectors or {}).get("kr_as_of") or as_of
+    L.append(f"━━ 🇰🇷 한국장 ({_kr_ao} 마감{'' if ms['kr_open'] else ' · 휴장'}, 괄호는 5일 변화) ━━")
     if kr_idx:
         L.append("지수   " + _move_row(kr_idx))
     if kr_fx:
@@ -357,6 +413,7 @@ def build_brief(lang: str = "ko") -> dict:
 
     brief = {
         "date": str(date.today()), "as_of": as_of, "headline": headline,
+        "market_status": ms,
         "plain": plain, "alerts": alerts, "watch": watch, "quiet": quiet,
         "regime": regime, "positioning": positioning, "extremes": extremes,
         "daily_flow": flow_list, "rates": rates, "lag": lag,
