@@ -4,3 +4,4 @@ python-dotenv>=1.0
 requests>=2.31
 pytest>=8.0
 yfinance>=0.2     # earnings-day market reaction (engine/prices.py)
+holidays>=0.50    # NYSE + KR exchange holiday calendars (market-closed detection)

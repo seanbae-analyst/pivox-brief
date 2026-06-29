@@ -2,27 +2,31 @@
 
 from datetime import date
 
+import pytest
+
 from engine.brief import _kr_read, _tilt, _us_rotation, detect_alerts, market_status
 
 
 def test_market_status_weekday_open():
-    ms = market_status(date(2026, 6, 29), "2026-06-26", "2026-06-29")  # Mon: US Fri T+1, KR today
+    ms = market_status(date(2026, 6, 29))  # Mon, not a holiday
     assert ms["banner"] is None and ms["kr_open"] and ms["us_open"]
 
 
 def test_market_status_weekend():
     for d in (date(2026, 6, 27), date(2026, 6, 28)):  # Sat, Sun
-        ms = market_status(d, "2026-06-26", "2026-06-26")
+        ms = market_status(d)
         assert "주말 휴장" in ms["banner"] and not ms["kr_open"] and not ms["us_open"]
 
 
 def test_market_status_kr_holiday():
-    ms = market_status(date(2026, 6, 29), "2026-06-26", "2026-06-26")  # KR data stale, US fresh
+    pytest.importorskip("holidays")
+    ms = market_status(date(2026, 5, 5))  # 어린이날 (Tue) — KR closed, US open
     assert not ms["kr_open"] and ms["us_open"] and "한국장 휴장" in ms["banner"]
 
 
 def test_market_status_us_holiday():
-    ms = market_status(date(2026, 6, 30), "2026-06-26", "2026-06-30")  # US biz-gap >1
+    pytest.importorskip("holidays")
+    ms = market_status(date(2026, 11, 26))  # Thanksgiving (Thu) — US closed, KR open
     assert not ms["us_open"] and ms["kr_open"] and "미국장 휴장" in ms["banner"]
 
 

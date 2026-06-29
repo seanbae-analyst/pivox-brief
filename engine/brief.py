@@ -51,33 +51,40 @@ def _parse_date(s):
     return None
 
 
-def _bizdays(d0, d1) -> int:
-    """Weekdays strictly after d0 up to and including d1."""
-    n, cur = 0, d0
-    while cur < d1:
-        cur += timedelta(days=1)
-        if cur.weekday() < 5:
-            n += 1
-    return n
+def _calendars(year):
+    """(NYSE, KRX-ish) holiday calendars for a year, or (None, None) if the lib is unavailable."""
+    try:
+        import holidays
+        nyse = (holidays.NYSE(years=[year]) if hasattr(holidays, "NYSE")
+                else holidays.financial_holidays("NYSE", years=[year]))
+        kr = holidays.SouthKorea(years=[year])
+        return nyse, kr
+    except Exception:
+        return None, None
 
 
-def market_status(today, us_as_of, kr_as_of) -> dict:
-    """Calendar-free: infer open/closed from the data's own as_of dates + weekday.
-    KR close data is same-day → closed if KR as_of < today. US is T+1 → closed-recently
-    if the business-day gap to its as_of exceeds 1 (catches weekday holidays too)."""
+def market_status(today, us_as_of=None, kr_as_of=None) -> dict:
+    """Is each market closed TODAY — from real exchange holiday calendars (NYSE + KR public
+    holidays via the `holidays` lib), not data-staleness. This is correct even at the 7:30 KST
+    pre-open run (when 'today' has no trades yet) and catches weekday holidays. Falls back to
+    weekend-only if the lib is missing. US is phrased as 'today's (overnight) session'."""
     wd = today.weekday()
     weekend = wd >= 5
-    kr_d, us_d = _parse_date(kr_as_of), _parse_date(us_as_of)
-    kr_closed = weekend or (kr_d is not None and kr_d < today)
-    us_closed = weekend or (us_d is not None and _bizdays(us_d, today) > 1)
+    nyse, kr = _calendars(today.year)
+    us_hol = bool(nyse) and today in nyse
+    kr_hol = bool(kr) and today in kr
+    us_name = nyse.get(today) if (nyse and us_hol) else None
+    kr_name = kr.get(today) if (kr and kr_hol) else None
+    us_closed = weekend or us_hol
+    kr_closed = weekend or kr_hol
     if weekend:
-        banner = f"주말 휴장 — 새 데이터 없음, 마지막 거래일 기준"
+        banner = "주말 휴장 — 새 데이터 없음, 마지막 거래일 종가 기준"
     elif kr_closed and us_closed:
         banner = "휴장일 — 마지막 거래일 종가 기준"
     elif kr_closed:
-        banner = "한국장 휴장 — 한국 데이터는 마지막 거래일 기준"
+        banner = f"오늘 한국장 휴장{f' ({kr_name})' if kr_name else ''} — 한국 데이터는 직전 거래일 기준"
     elif us_closed:
-        banner = "미국장 휴장 — 미국 데이터는 직전 거래일 기준"
+        banner = f"오늘(밤) 미국장 휴장{f' ({us_name})' if us_name else ''} — 미국 데이터는 직전 거래일 기준"
     else:
         banner = None
     return {
@@ -85,6 +92,8 @@ def market_status(today, us_as_of, kr_as_of) -> dict:
         "kr_open": not kr_closed, "us_open": not us_closed,
         "kr_label": ("정상" if not kr_closed else "휴장"),
         "us_label": ("정상" if not us_closed else "휴장"),
+        "kr_holiday": kr_name, "us_holiday": us_name,
+        "calendar": bool(nyse),
         "banner": banner,
     }
 
