@@ -82,6 +82,8 @@ def main() -> int:
     payload = json.dumps(packs, ensure_ascii=False).replace("<", "\\u003c")
     mkt = json.dumps(market, ensure_ascii=False).replace("<", "\\u003c")
     html = TEMPLATE.replace("__DATA__", payload).replace("__MARKET__", mkt)
+    from engine.webnav import nav
+    html = html.replace("<body>", "<body>" + nav("home"))   # shared top nav (incl. ⚙️ 설정)
     assert "__DATA__" not in html and "__MARKET__" not in html, "unfilled placeholder"
 
     out = ROOT / "docs" / "pack.html"
