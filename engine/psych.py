@@ -5,16 +5,19 @@ blending six independent mood signals (each normalized to 0 = extreme fear … 1
 greed) and averaging them. It also returns the per-signal breakdown so the brief can show
 *why* the needle sits where it does — which is the actual market-psychology read.
 
-Signals:
+Signals (8 — CNN-level coverage from free sources):
   1. 주가 모멘텀     — S&P 500 5-day return (FRED SP500)
   2. 변동성(VIX)     — VIX level (FRED VIXCLS); low vol = greed
   3. 변동성 만기구조 — VIX / VIX-3M (VIXCLS / VXVCLS); backwardation = fear
   4. 신용 스프레드   — high-yield OAS (BAMLH0A0HYM2); tight = greed
   5. 금융 스트레스   — St. Louis Fed Financial Stress Index (STLFSI4); negative = calm
   6. 크립토 심리     — crypto Fear & Greed (alternative.me, keyless) as a risk-appetite proxy
+  7. 시장 폭         — % of a large-cap basket above its 50-day MA (yfinance); broad = greed
+  8. 안전자산 선호   — stocks (SPY) vs bonds (TLT) 20-day return spread (yfinance); stocks-win = greed
 
-Every signal degrades independently (a dead source just drops out of the average), and the
-score is None only if nothing resolves.
+7 & 8 mirror CNN's "stock price strength/breadth" and "safe-haven demand" components. Every
+signal degrades independently (a dead source just drops out of the average), and the score is
+None only if nothing resolves.
 """
 from __future__ import annotations
 
@@ -23,6 +26,48 @@ import os
 import requests
 
 from engine.market import _TIMEOUT, _UA, _fred_obs
+
+# ~28 S&P 500 leaders — broad enough for a meaningful breadth read, cheap enough for one fetch
+_BREADTH_BASKET = [
+    "AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "AVGO", "TSLA", "JPM", "V",
+    "UNH", "XOM", "JNJ", "WMT", "MA", "PG", "HD", "COST", "ORCL", "LLY",
+    "BAC", "KO", "PEP", "NFLX", "AMD", "CRM", "ADBE", "CVX",
+]
+
+
+def _yf_factors() -> dict:
+    """Breadth (% of basket > 50d MA) + safe-haven demand (SPY vs TLT 20d). One yfinance call."""
+    try:
+        import warnings
+
+        import yfinance as yf
+        warnings.filterwarnings("ignore")
+        data = yf.download(_BREADTH_BASKET + ["SPY", "TLT"], period="4mo",
+                           progress=False, threads=True)["Close"]
+    except Exception:
+        return {}
+    out: dict = {}
+    above = tot = 0
+    for s in _BREADTH_BASKET:
+        try:
+            ser = data[s].dropna()
+        except Exception:
+            continue
+        if len(ser) >= 50:
+            tot += 1
+            if float(ser.iloc[-1]) > float(ser.tail(50).mean()):
+                above += 1
+    if tot >= 10:
+        out["breadth"] = (round(100 * above / tot), f"{above}/{tot}개 50일선 위")
+    try:
+        spy, tlt = data["SPY"].dropna(), data["TLT"].dropna()
+        if len(spy) >= 21 and len(tlt) >= 21:
+            r_spy = 100 * (float(spy.iloc[-1]) / float(spy.iloc[-21]) - 1)
+            r_tlt = 100 * (float(tlt.iloc[-1]) / float(tlt.iloc[-21]) - 1)
+            out["safehaven"] = (r_spy - r_tlt, f"주식−채권 20일 {r_spy - r_tlt:+.1f}%p")
+    except Exception:
+        pass
+    return out
 
 
 def _latest(key: str, sid: str) -> float | None:
@@ -100,6 +145,14 @@ def fear_greed() -> dict | None:
     cf = _crypto_fng()
     if cf is not None:
         comp.append(("크립토 심리", _clamp(cf, 0, 100), f"코인 F&G {cf}"))
+
+    yf = _yf_factors()
+    if "breadth" in yf:
+        sc, nt = yf["breadth"]
+        comp.append(("시장 폭", sc, nt))
+    if "safehaven" in yf:
+        diff, nt = yf["safehaven"]
+        comp.append(("안전자산 선호", round(_lerp(diff, -8, 8, 0, 100)), nt))
 
     if not comp:
         return None
