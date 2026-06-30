@@ -114,14 +114,14 @@ def _gauge(score, col, w=210, h=124):
         arcs += (f'<path d="M {x0:.1f} {y0:.1f} A {r} {r} 0 0 1 {x1:.1f} {y1:.1f}" '
                  f'stroke="{c}" stroke-width="11" fill="none"/>')
     deg = 180 * (1 - score / 100)
-    nx, ny = _polar(cx, cy, r - 6, deg)
+    nx, ny = _polar(cx, cy, r - 6, deg)    # needle tip reaches the colored arc
+    # NO number inside the SVG — it collided with the arc/needle. The score is shown big in
+    # the label line right below the gauge instead (see _fg_card).
     return (
         f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" style="display:block;margin:2px auto 0;">'
         f'{arcs}'
         f'<line x1="{cx}" y1="{cy}" x2="{nx:.1f}" y2="{ny:.1f}" stroke="{col}" stroke-width="3" stroke-linecap="round"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="6" fill="{col}"/>'
-        f'<text x="{cx}" y="{cy - r - 2}" text-anchor="middle" '
-        f'style="font:700 30px var(--serif);fill:{col};">{score}</text></svg>'
+        f'<circle cx="{cx}" cy="{cy}" r="5" fill="{col}"/></svg>'
     )
 
 
@@ -168,8 +168,9 @@ def _fg_card(fg):
     return (
         f'<div class="card"><h3>공포 · 탐욕 지수</h3>'
         f'{_gauge(s, col)}'
-        f'<div style="text-align:center;margin:2px 0 2px;">'
-        f'<span style="font-size:17px;font-weight:700;color:{col};">{_esc(fg["label"])}</span> '
+        f'<div style="text-align:center;margin:-6px 0 2px;">'
+        f'<span style="font-family:var(--serif);font-size:34px;font-weight:700;color:{col};line-height:1;">{s}</span>'
+        f'<span style="font-size:17px;font-weight:700;color:{col};margin-left:8px;">{_esc(fg["label"])}</span> '
         f'<span style="font-size:11px;color:{_SUB};{_MONO}">/ 100</span>  {delta}</div>'
         f'<div style="display:flex;justify-content:space-between;font:600 10px var(--mono);color:{_SUB};letter-spacing:.06em;margin:6px 4px 14px;">'
         f'<span>극단적 공포</span><span>탐욕</span></div>'
