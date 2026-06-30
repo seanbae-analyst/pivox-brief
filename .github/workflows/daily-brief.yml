@@ -1,0 +1,104 @@
+name: Daily Brief
+
+# Permanent cloud schedule for the daily market-psychology brief.
+# Runs on GitHub-hosted runners (free — repo is public), so it no longer
+# depends on the founder's Mac being awake. Mirrors scripts/refresh_and_deploy.sh.
+#
+# 07:30 KST == 22:30 UTC (KST = UTC+9). The whole job runs in Asia/Seoul time
+# so datetime.now() in the Python scripts produces the correct KST date.
+
+on:
+  schedule:
+    - cron: "30 22 * * *"   # 07:30 KST daily
+  workflow_dispatch: {}       # manual "Run workflow" button
+
+permissions:
+  contents: write             # push the daily data commit back to main
+
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+      # .vercel/ is gitignored, so the CLI is linked via these env vars instead.
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Write .env from secrets
+        run: |
+          cat > .env <<EOF
+          EDGAR_USER_AGENT=${{ secrets.EDGAR_USER_AGENT }}
+          DART_API_KEY=${{ secrets.DART_API_KEY }}
+          FRED_API_KEY=${{ secrets.FRED_API_KEY }}
+          FINNHUB_API_KEY=${{ secrets.FINNHUB_API_KEY }}
+          BRIEF_TO=${{ secrets.BRIEF_TO }}
+          BRIEF_FROM=${{ secrets.BRIEF_FROM }}
+          GMAIL_USER=${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}
+          KIS_APP_KEY=${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET=${{ secrets.KIS_APP_SECRET }}
+          KIS_USE_REAL=${{ secrets.KIS_USE_REAL }}
+          EOF
+
+      - name: Build site
+        run: python scripts/build_site.py
+
+      - name: JS sanity gate (never ship an unparseable page)
+        run: |
+          python - <<'PY'
+          import re, pathlib
+          h = pathlib.Path("docs/pack.html").read_text(encoding="utf-8")
+          m = re.search(r"<script>(.*)</script>", h, re.S)
+          pathlib.Path("/tmp/pb_check.js").write_text(m.group(1))
+          PY
+          node --check /tmp/pb_check.js
+
+      - name: Morning brief (email + web)
+        run: python scripts/brief.py --send --web --quiet || echo "brief step failed (non-fatal)"
+
+      - name: Settings page + home inject
+        run: |
+          python scripts/build_settings_page.py || echo "settings page failed (non-fatal)"
+          python scripts/inject_home.py || echo "home inject failed (non-fatal)"
+
+      - name: Commit daily data back to main
+        run: |
+          git config user.name "pivox-brief-bot"
+          git config user.email "bot@pivoxquant.com"
+          if [ -n "$(git status --porcelain docs/pack.html docs/brief.html docs/settings.html)" ]; then
+            git add docs/pack.html docs/brief.html docs/settings.html
+            git commit -m "chore(refresh): daily data + brief ($(date +%F))"
+            git push
+            echo "pushed -> main"
+          else
+            echo "no data change"
+          fi
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN not set — skipping deploy (data committed to main only)"
+            exit 0
+          fi
+          npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
