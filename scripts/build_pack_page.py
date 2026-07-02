@@ -137,7 +137,7 @@ h1{font:600 30px/1.15 var(--serif);margin:0 0 6px;letter-spacing:.01em}
 .sel button{appearance:none;border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:8px 16px;font:600 12.5px var(--mono);letter-spacing:.02em;color:var(--muted);cursor:pointer;transition:all .15s}
 .sel button:hover{color:var(--ink)}
 .sel button.on{border-color:var(--accent);color:var(--accent2);background:var(--accent-dim)}
-h2.name{font:700 30px/1.1 var(--serif);margin:0 0 4px;letter-spacing:.01em}
+h2.name{font:600 30px/1.1 var(--serif);margin:0 0 4px;letter-spacing:.01em}
 h2.name span{color:var(--accent)!important;font-family:var(--mono)!important;font-size:.58em;letter-spacing:.04em}
 .meta{color:var(--muted);font:12px/1.5 var(--mono);margin:0 0 22px;letter-spacing:.02em}
 .chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}

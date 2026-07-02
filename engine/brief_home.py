@@ -188,7 +188,7 @@ def _fg_card(fg):
     delta = ""
     if d is not None and d != 0:
         dc = "#cf6b6b" if d > 0 else "#7AA0C8"
-        delta = (f'<span style="font-size:13px;font-weight:700;color:{dc};{_MONO}">'
+        delta = (f'<span style="font-size:13px;font-weight:600;color:{dc};{_MONO}">'
                  f'{"▲" if d > 0 else "▼"} 어제比 {d:+d}</span>')
     trend = ""
     if fg.get("trend"):
@@ -198,8 +198,8 @@ def _fg_card(fg):
         f'<div class="card"><h3>공포 · 탐욕 지수</h3>'
         f'{_gauge(s, col)}'
         f'<div style="text-align:center;margin:-6px 0 2px;">'
-        f'<span style="font-family:var(--serif);font-size:34px;font-weight:700;color:{col};line-height:1;">{s}</span>'
-        f'<span style="font-size:17px;font-weight:700;color:{col};margin-left:8px;">{_esc(fg["label"])}</span> '
+        f'<span style="font-family:var(--mono);font-size:32px;font-weight:600;letter-spacing:-.02em;color:{col};line-height:1;">{s}</span>'
+        f'<span style="font-size:16px;font-weight:600;color:{col};margin-left:8px;">{_esc(fg["label"])}</span> '
         f'<span style="font-size:11px;color:{_SUB};{_MONO}">/ 100</span>  {delta}</div>'
         f'<div style="display:flex;justify-content:space-between;font:600 10px var(--mono);color:{_SUB};letter-spacing:.06em;margin:6px 4px 14px;">'
         f'<span>극단적 공포</span><span>탐욕</span></div>'
@@ -223,14 +223,14 @@ def _kr_card(kr):
         diverge = (
             f'<div style="margin:6px 0 4px;padding:10px 12px;background:rgba(245,240,232,.05);border-radius:4px;'
             f'border-left:3px solid {_ACCENT};font-size:13px;color:{_INK};{_MONO}">'
-            f'외국인 <span style="color:{fc};font-weight:700;">{f_t:+.1f}조</span> · '
-            f'개인 <span style="color:{rc};font-weight:700;">{r_t:+.1f}조</span> '
+            f'외국인 <span style="color:{fc};font-weight:600;">{f_t:+.1f}조</span> · '
+            f'개인 <span style="color:{rc};font-weight:600;">{r_t:+.1f}조</span> '
             f'<span style="font-size:11px;color:{_SUB};">(5일, KIS 실측)</span>{tag}</div>')
     return (
         f'<div class="card"><h3>한국 시장심리</h3>'
         f'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">'
-        f'<div style="font-family:var(--serif);font-size:38px;font-weight:700;color:{col};line-height:1;">{s}</div>'
-        f'<div style="font-size:16px;font-weight:700;color:{col};">{_esc(kr["label"])}</div>'
+        f'<div style="font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.02em;color:{col};line-height:1;">{s}</div>'
+        f'<div style="font-size:15px;font-weight:600;color:{col};">{_esc(kr["label"])}</div>'
         f'<div style="font-size:11px;color:{_SUB};{_MONO}">/ 100</div></div>'
         f'{diverge}'
         f'{_components(kr["components"])}'
@@ -257,7 +257,7 @@ def _hot_chips(items, kr=False):
                      f'<div style="font-size:11.5px;color:{_INK};{_MONO}margin-top:1px;">${_lvl(last)}</div>')
         cells += (f'<div{click} style="background:{bg};border:1px solid {bd};border-radius:4px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
-                  f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div>'
+                  f'<div style="font-size:18px;color:{_col(x)};font-weight:600;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div>'
                   f'{price}'
                   f'{_spark(i.get("spark"), _col(x))}</div>')
     return (f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px;">{cells}</div>')
@@ -300,7 +300,7 @@ def render_home_cards(b: dict) -> str:
             f'<div style="flex:1;height:5px;background:{col if i <= m["level"] else "rgba(245,240,232,.10)"};"></div>'
             for i in range(1, 6))
         bar = f'<div style="display:flex;gap:3px;margin:9px 0 16px;max-width:280px;">{segs}</div>'
-        P.append(f'<div style="font-size:15px;font-weight:700;color:{col};margin-bottom:2px;">'
+        P.append(f'<div style="font-size:15px;font-weight:600;color:{col};margin-bottom:2px;">'
                  f'시장 기분: {_esc(m["label"])} '
                  f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {m["level"]} · {_esc(m["note"])}</span></div>'
                  f'{bar}')
@@ -322,9 +322,9 @@ def render_home_cards(b: dict) -> str:
         P.append('<div class="card"><h3>핫 종목 · 오늘 제일 많이 움직인</h3>')
         P.append(f'<p style="font-size:11.5px;color:{_SUB};margin:-8px 0 10px;">칩을 누르면 그 종목의 공시 기반 딥다이브로 넘어가요</p>')
         if us_hot:
-            P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:0 0 6px;">미국</div>{_hot_chips(us_hot)}')
+            P.append(f'<div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:{_SUB};margin:0 0 6px;">미국</div>{_hot_chips(us_hot)}')
         if kr_hot:
-            P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:12px 0 6px;">한국</div>{_hot_chips(kr_hot, kr=True)}')
+            P.append(f'<div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:{_SUB};margin:12px 0 6px;">한국</div>{_hot_chips(kr_hot, kr=True)}')
         P.append('</div>')
 
     # ── 미국장 / 한국장 — side-by-side on desktop ──
@@ -354,7 +354,7 @@ def render_home_cards(b: dict) -> str:
             ana = f'<div style="font-size:13px;color:{_SUB};margin-top:5px;">비유: {_esc(tod["analogy"])}</div>' if tod.get("analogy") else ""
             P.append(f'<div style="background:{_UP_BG};border-radius:4px;padding:12px 14px;">'
                      f'<div style="font-size:12px;font-weight:700;color:{_ACCENT};">오늘의 용어</div>'
-                     f'<div style="font-size:16px;font-weight:800;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
+                     f'<div style="font-size:16px;font-weight:600;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
                      f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>{ana}</div>')
         if b.get("glossary"):
             chips = "".join(

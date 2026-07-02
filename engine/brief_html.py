@@ -45,7 +45,7 @@ def _hot_grid(items: list[dict]) -> str:
             f'<td width="50%" valign="top" style="padding:4px;">'
             f'<div style="background:{_tint(x)};border-radius:4px;padding:11px 13px;">'
             f'<div style="font-size:13px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;">{_esc(i["label"])}</div>'
-            f'<div style="font-size:23px;color:{_col(x)};font-weight:800;line-height:1.15;letter-spacing:-.3px;white-space:nowrap;">{_arr(x)} {x:+.1f}%</div>'
+            f'<div style="font-size:23px;color:{_col(x)};font-weight:700;line-height:1.15;letter-spacing:-.3px;white-space:nowrap;">{_arr(x)} {x:+.1f}%</div>'
             f'</div></td>'
         )
     rows = ""
@@ -66,7 +66,7 @@ def _rows(items: list[dict]) -> str:
         out.append(
             f'<tr>'
             f'<td style="padding:7px 0;font-size:15px;color:{_INK};white-space:nowrap;">{_esc(i["label"])}</td>'
-            f'<td style="padding:7px 0;text-align:right;font-size:16px;font-weight:800;'
+            f'<td style="padding:7px 0;text-align:right;font-size:16px;font-weight:700;'
             f'color:{_col(x)};white-space:nowrap;letter-spacing:-.2px;">{_arr(x)} {val}</td>'
             f'</tr>'
         )
@@ -78,7 +78,7 @@ def _card(flag: str, title: str, sub: str, body: str) -> str:
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:separate;background:{_CARD};border:1px solid {_LINE};'
         f'border-radius:4px;margin:0 0 14px;"><tr><td style="padding:16px 18px;">'
-        f'<div style="font-size:16px;font-weight:800;color:{_INK};letter-spacing:-.2px;">{(flag + " ") if flag else ""}{_esc(title)}'
+        f'<div style="font-size:16px;font-weight:700;color:{_INK};letter-spacing:-.2px;">{(flag + " ") if flag else ""}{_esc(title)}'
         f'<span style="font-weight:500;color:{_SUB};font-size:12px;">  {_esc(sub)}</span></div>'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:collapse;margin-top:6px;">{body}</table>'
@@ -87,7 +87,7 @@ def _card(flag: str, title: str, sub: str, body: str) -> str:
 
 
 def _section_title(text: str) -> str:
-    return (f'<div style="font-size:17px;font-weight:800;color:{_INK};letter-spacing:-.3px;'
+    return (f'<div style="font-size:17px;font-weight:700;color:{_INK};letter-spacing:-.3px;'
             f'margin:4px 2px 8px;">{text}</div>')
 
 
@@ -106,7 +106,7 @@ def _thermo(m: dict) -> str:
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:collapse;margin-top:10px;"><tr>'
         f'<td style="vertical-align:middle;">'
-        f'<div style="font-size:14px;font-weight:800;color:{col};">시장 기분: {_esc(m["label"])} '
+        f'<div style="font-size:14px;font-weight:700;color:{col};">시장 기분: {_esc(m["label"])} '
         f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {lv} · {_esc(m["note"])}</span></div>'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:collapse;margin-top:5px;max-width:240px;"><tr>{segs}</tr></table>'
@@ -134,7 +134,7 @@ def _fg_block(fg) -> str:
         return ""
     s, col = fg["score"], _fg_zone(fg["score"])
     rows = (f'<tr><td colspan="3" style="padding:2px 0 12px;">'
-            f'<span style="font-size:36px;font-weight:800;color:{col};">{s}</span>'
+            f'<span style="font-size:36px;font-weight:700;color:{col};">{s}</span>'
             f'<span style="font-size:16px;font-weight:700;color:{col};"> {_esc(fg["label"])}</span>'
             f'<span style="font-size:12px;color:{_SUB};"> / 100</span></td></tr>')
     for c in fg["components"]:
@@ -173,7 +173,7 @@ def render_html(b: dict) -> str:
     # header — publication date (today) ≠ data date (last completed US session); label both
     pub, dat = b.get("date"), b.get("as_of")
     when = f'{_esc(pub or dat)} 아침' + (f' · 미국장 {_esc(dat)} 마감 기준' if dat and dat != pub else "")
-    P.append(f'<div style="font-size:22px;font-weight:800;color:{_INK};letter-spacing:-.5px;">'
+    P.append(f'<div style="font-size:22px;font-weight:700;color:{_INK};letter-spacing:-.5px;">'
              f'시장심리 브리핑</div>'
              f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{when}</div>')
     _ms = b.get("market_status") or {}
@@ -183,7 +183,7 @@ def render_html(b: dict) -> str:
 
     # hero band — headline + plain + (beginner) so-what + thermometer
     guide = b.get("guide")
-    hero = f'<div style="font-size:21px;font-weight:800;color:{band[0]};line-height:1.3;letter-spacing:-.4px;">{_esc(risk)}</div>'
+    hero = f'<div style="font-size:21px;font-weight:700;color:{band[0]};line-height:1.3;letter-spacing:-.4px;">{_esc(risk)}</div>'
     if b.get("plain"):
         hero += f'<div style="font-size:14px;color:{_INK};margin-top:7px;line-height:1.55;">{_esc(b["plain"])}</div>'
     if guide and b.get("sowhat"):
@@ -230,7 +230,7 @@ def render_html(b: dict) -> str:
     if kr_fx:
         won = "원화 약세" if (kr_fx["chg5_pct"] or 0) > 0 else "원화 강세"
         body += (f'<tr><td style="padding:7px 0;font-size:15px;color:{_INK};">원/달러</td>'
-                 f'<td style="padding:7px 0;text-align:right;font-size:15px;font-weight:800;color:{_col(kr_fx["chg5_pct"])};white-space:nowrap;">'
+                 f'<td style="padding:7px 0;text-align:right;font-size:15px;font-weight:700;color:{_col(kr_fx["chg5_pct"])};white-space:nowrap;">'
                  f'{kr_fx["last"]:,.0f}원 · {won}</td></tr>')
     if body:
         P.append(_card("", "한국장", "오늘 마감 · 5일 변화", body))
@@ -252,7 +252,7 @@ def render_html(b: dict) -> str:
                 f'style="border-collapse:separate;margin:0 0 10px;"><tr><td '
                 f'style="background:{_UP_BG};border-radius:4px;padding:13px 15px;">'
                 f'<div style="font-size:12px;font-weight:700;color:{_ACCENT};">오늘의 용어</div>'
-                f'<div style="font-size:16px;font-weight:800;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
+                f'<div style="font-size:16px;font-weight:700;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
                 f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>'
                 f'{ana}</td></tr></table>'
             )

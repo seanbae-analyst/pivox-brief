@@ -18,7 +18,7 @@ def nav(active: str) -> str:
     for key, href, label in _LINKS:
         on = key == active
         color = "#F5F0E8" if on else "#8A8A8A"
-        weight = "800" if on else "500"
+        weight = "600" if on else "400"
         bb = "border-bottom:2px solid #B8956A;" if on else "border-bottom:2px solid transparent;"
         items.append(
             f'<a href="{href}" style="color:{color};text-decoration:none;font-weight:{weight};'
@@ -29,7 +29,7 @@ def nav(active: str) -> str:
         'font-family:\'Pretendard Variable\',Pretendard,-apple-system,BlinkMacSystemFont,'
         '\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;">'
         '<div style="max-width:960px;margin:0 auto;padding:0 16px;display:flex;gap:20px;align-items:center;">'
-        '<a href="./pack.html" style="color:#B8956A;text-decoration:none;font-weight:800;font-size:16px;'
+        '<a href="./pack.html" style="color:#B8956A;text-decoration:none;font-weight:700;font-size:16px;'
         'letter-spacing:.5px;padding:13px 0;margin-right:4px;">PIVOX</a>'
         + "".join(items)
         + '</div></div>'
