@@ -205,7 +205,7 @@ def _fg_card(fg):
         f'<span>극단적 공포</span><span>탐욕</span></div>'
         f'{_components(fg["components"])}'
         f'{trend}'
-        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;">CNN식 9요인 합성 · 무료/공식(FRED·CFTC·crypto·옵션)</div></div>'
+        f'<div style="font-size:11px;color:{_SUB};margin-top:10px;">CNN식 9요인 합성 · FRED·CFTC·옵션 · 크립토 심리: alternative.me Fear &amp; Greed</div></div>'
     )
 
 
@@ -366,5 +366,5 @@ def render_home_cards(b: dict) -> str:
             P.append(f'<div style="line-height:1.9;margin-top:4px;">{chips}</div>')
         P.append('</div>')
 
-    src = f'<div style="font-size:11px;color:{_SUB};margin:0 2px 8px;font-family:var(--mono);">DATA · yfinance · CFTC · FRED · US Treasury · 정보 제공용, 투자자문 아님</div>'
+    src = f'<div style="font-size:11px;color:{_SUB};margin:0 2px 8px;font-family:var(--mono);">DATA · yfinance · CFTC · FRED · US Treasury · FRED API 사용(St. Louis Fed의 보증·인증 아님) · 정보 제공용, 투자자문 아님</div>'
     return f'<div style="margin-bottom:8px;">{"".join(P)}</div>{src}'

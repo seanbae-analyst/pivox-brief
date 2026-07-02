@@ -146,7 +146,7 @@ def _fg_block(fg) -> str:
             f'<td width="{w}%" height="6" style="background:{cc};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
             f'<td height="6" style="font-size:0;line-height:0;background:#161514;border-radius:3px;">&nbsp;</td></tr></table></td>'
             f'<td style="padding:5px 0;text-align:right;font-size:13px;color:{_INK};">{c["score"]}</td></tr>')
-    return _card("", "공포·탐욕 지수", "CNN식 6요인 합성 · 무료/공식 데이터", rows)
+    return _card("", "공포·탐욕 지수", "CNN식 합성 · FRED·CFTC · 크립토: alternative.me", rows)
 
 
 def render_html(b: dict) -> str:
@@ -286,7 +286,7 @@ def render_html(b: dict) -> str:
     # footer
     P.append(f'<div style="border-top:1px solid {_LINE};margin-top:14px;padding-top:10px;'
              f'font-size:11px;color:{_SUB};line-height:1.6;">'
-             f'데이터: yfinance(지수·섹터·종목) · CFTC · FRED · US Treasury<br>'
+             f'데이터: yfinance(지수·섹터·종목) · CFTC · FRED(St. Louis Fed 비보증) · US Treasury · 크립토: alternative.me<br>'
              f'목표주가·리테일심리 = 미표시(라이선스). 본 브리핑은 정보 제공이며 투자 권유가 아닙니다.</div>')
 
     P.append('</td></tr></table></div>')

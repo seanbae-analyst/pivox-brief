@@ -35,6 +35,10 @@
 | **The Motley Fool** (transcripts) | current 9-company earnings read | ⚠️ copyrighted | Transcripts are copyrighted ("no reproduction"). We extract **facts only**; raw text gitignored. The clean research-pack path drops transcript dependence (uses EDGAR/DART filings). |
 | **WebSearch** | finding sources, headlines | ✅ low | Discovery + headline/link; no body reproduction. |
 | **FMP** | (optional) financials | licensed API | Use within their terms; redistribution per their license. |
+| **FRED API** | rates, VIX, HY spread, stress indices | ✅ verified 2026-07-02 | Attribution required (footer credits FRED); may not imply St. Louis Fed endorsement — non-endorsement note added to web+email footers. |
+| **alternative.me** (crypto F&G) | crypto sentiment component | ✅ verified 2026-07-02 | Attribution required "right next to the display" (their terms); commercial OK with credit. Credit added beside the F&G card. |
+| **Finnhub** (analyst consensus) | sell-side rating distribution + targets | ⚠️ gray — verified 2026-07-02 | ToS: "strictly for personal use", no redistribution of data **or derived results** without written approval. Public display of the consensus card sits outside that. Card is labeled "via Finnhub"; worst realistic case = free key revoked. Decision: keep for the demo, drop or license before any public/commercial push. |
+| **KIS OpenAPI** (투자자 수급) | KR foreign/retail net-flow aggregate | ⚠️ terms unverified | Official API (read-only), but the full ToS sits behind the portal login — redistribution clause unconfirmed (checked 2026-07-02, page not publicly fetchable). We publish only a derived 5-day aggregate (조 단위), not quotes. Verify the clause from a logged-in session before any commercial use. |
 | **KRX investor flows** (외국인/기관 일별 순매매) | KR per-stock daily foreign / institutional net buy-sell | ⚠️ no clean API | See note below — the official KRX OPEN API does **not** expose investor-type flows; the only programmatic source is the gray `data.krx.co.kr` internal endpoint (what pykrx scrapes). Excluded by our posture pending a decision. |
 
 ## KR investor flows (외국인 매도) — researched 2026-06-23, decision pending
