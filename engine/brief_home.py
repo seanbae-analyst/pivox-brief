@@ -36,10 +36,25 @@ def _pct_cell(x, dp=1):
     return f'<span style="color:{_col(x)};font-weight:600;white-space:nowrap;{_MONO}">{_arr(x)} {val}</span>'
 
 
+def _lvl(v) -> str:
+    """Current level/price, human-formatted: 6,205 / 173.5 / 16.4 / 0.85."""
+    if v is None:
+        return ""
+    a = abs(v)
+    dp = 0 if a >= 1000 else (1 if a >= 10 else 2)
+    return f"{v:,.{dp}f}"
+
+
 def _table(rows):
+    """rows = (label, last_or_None, chg_pct). Level column shows WHERE the index is now —
+    a % move alone doesn't tell you the level (sector ETF rows pass None: ETF NAV ≠ 섹터)."""
     body = ""
-    for label, x in rows:
+    for label, last, x in rows:
+        lvl = (f'<td style="padding:6px 8px 6px 0;text-align:right;font-size:13.5px;color:{_INK};'
+               f'white-space:nowrap;{_MONO}">{_lvl(last)}</td>') if last is not None else \
+              f'<td style="padding:6px 8px 6px 0;"></td>'
         body += (f'<tr><td style="padding:6px 0;font-size:14px;color:{_INK};">{_esc(label)}</td>'
+                 f'{lvl}'
                  f'<td style="padding:6px 0;text-align:right;font-size:14px;">{_pct_cell(x)}</td></tr>')
     return f'<table style="width:100%;border-collapse:collapse;">{body}</table>'
 
@@ -64,26 +79,31 @@ def _spark(vals, col, w=108, h=24):
 
 
 def _stat_strip(b: dict) -> str:
-    """Bloomberg-style mono ticker strip of the key indices + VIX, right under the masthead."""
+    """Bloomberg-style strip: current LEVEL big (지금 몇인지), 5-day % small under it.
+    A % alone doesn't tell the reader where the index actually stands."""
     sectors = b.get("sectors") or {}
     us = {i["label"]: i for i in sectors.get("us") or []}
     kr = {i["label"]: i for i in sectors.get("kr") or []}
     flow = {f["label"]: f for f in (b.get("daily_flow") or [])}
     cells = ""
-    pairs = [("S&P 500", us.get("S&P 500")), ("나스닥", us.get("나스닥")),
-             ("코스피", kr.get("코스피")), ("코스닥", kr.get("코스닥"))]
-    for lbl, src in pairs:
-        if not src or src.get("chg5_pct") is None:
+    pairs = [("S&P 500", us.get("S&P 500"), ""), ("나스닥", us.get("나스닥"), ""),
+             ("코스피", kr.get("코스피"), ""), ("코스닥", kr.get("코스닥"), ""),
+             ("원/달러", kr.get("원/달러"), "원")]
+    for lbl, src, unit in pairs:
+        if not src or src.get("last") is None:
             continue
-        x = src["chg5_pct"]
-        cells += (f'<div style="flex:1;min-width:88px;padding:10px 14px;border-right:1px solid {_LINE};">'
+        x = src.get("chg5_pct")
+        chg = (f'<div style="font-size:11.5px;font-weight:600;color:{_col(x)};{_MONO}margin-top:2px;">'
+               f'{_arr(x)} {x:+.1f}% <span style="color:{_SUB};font-weight:500;">5일</span></div>') if x is not None else ""
+        cells += (f'<div style="flex:1;min-width:96px;padding:10px 14px;border-right:1px solid {_LINE};">'
                   f'<div style="font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:{_SUB};">{_esc(lbl)}</div>'
-                  f'<div style="font-size:15px;font-weight:600;color:{_col(x)};{_MONO}margin-top:3px;">{_arr(x)} {x:+.1f}%</div></div>')
+                  f'<div style="font-size:16px;font-weight:600;color:{_INK};{_MONO}margin-top:3px;">{_lvl(src["last"])}{unit}</div>'
+                  f'{chg}</div>')
     vix = flow.get("VIX")
     if vix and vix.get("value") is not None:
-        cells += (f'<div style="flex:1;min-width:88px;padding:10px 14px;">'
+        cells += (f'<div style="flex:1;min-width:96px;padding:10px 14px;">'
                   f'<div style="font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:{_SUB};">VIX</div>'
-                  f'<div style="font-size:15px;font-weight:600;color:{_INK};{_MONO}margin-top:3px;">{vix["value"]:.1f}</div></div>')
+                  f'<div style="font-size:16px;font-weight:600;color:{_INK};{_MONO}margin-top:3px;">{vix["value"]:.1f}</div></div>')
     if not cells:
         return ""
     return (f'<div style="display:flex;flex-wrap:wrap;border:1px solid {_LINE};border-radius:12px;'
@@ -216,7 +236,7 @@ def _kr_card(kr):
     )
 
 
-def _hot_chips(items):
+def _hot_chips(items, kr=False):
     import re as _re
     cells = ""
     for i in items:
@@ -227,9 +247,16 @@ def _hot_chips(items):
         code = _re.sub(r"[^A-Za-z0-9.\-]", "", str(i.get("symbol") or "")).split(".")[0]
         click = (f' class="hotchip" role="button" tabindex="0" onclick="openTicker(\'{code}\')"'
                  f' title="{_esc(i["label"])} 딥다이브 열기"') if code else ""
+        last = i.get("last") or ((i.get("spark") or [None])[-1])
+        price = ""
+        if last is not None:
+            price = (f'<div style="font-size:11.5px;color:{_INK};{_MONO}margin-top:1px;">'
+                     f'{_lvl(last)}원</div>' if kr else
+                     f'<div style="font-size:11.5px;color:{_INK};{_MONO}margin-top:1px;">${_lvl(last)}</div>')
         cells += (f'<div{click} style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
                   f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div>'
+                  f'{price}'
                   f'{_spark(i.get("spark"), _col(x))}</div>')
     return (f'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:8px;">{cells}</div>')
 
@@ -298,15 +325,15 @@ def render_home_cards(b: dict) -> str:
         if us_hot:
             P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:0 0 6px;">🇺🇸 미국</div>{_hot_chips(us_hot)}')
         if kr_hot:
-            P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:12px 0 6px;">🇰🇷 한국</div>{_hot_chips(kr_hot)}')
+            P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:12px 0 6px;">🇰🇷 한국</div>{_hot_chips(kr_hot, kr=True)}')
         P.append('</div>')
 
     # ── 미국장 / 한국장 — side-by-side on desktop ──
     sectors = b.get("sectors") or {}
     us, kr = sectors.get("us") or [], sectors.get("kr") or []
-    us_idx = [(i["label"], i["chg5_pct"]) for i in us if i["group"] == "지수"]
-    us_sec = [(i["label"], i["chg5_pct"]) for i in us if i["group"] == "섹터"]
-    kr_idx = [(i["label"], i["chg5_pct"]) for i in kr if i["group"] == "지수"]
+    us_idx = [(i["label"], i.get("last"), i["chg5_pct"]) for i in us if i["group"] == "지수"]
+    us_sec = [(i["label"], None, i["chg5_pct"]) for i in us if i["group"] == "섹터"]  # ETF NAV ≠ 섹터 레벨
+    kr_idx = [(i["label"], i.get("last"), i["chg5_pct"]) for i in kr if i["group"] in ("지수", "환율")]
     us_card = kr_card = ""
     if us_idx or us_sec:
         us_card = '<div class="card"><h3>🇺🇸 미국장 · 5일 변화</h3>' + _table(us_idx + us_sec)
