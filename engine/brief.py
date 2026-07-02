@@ -311,7 +311,9 @@ def build_brief(lang: str = "ko") -> dict:
         return "  ".join(f"{_arrow(i['chg1_pct'])}{i['label']} {i['chg1_pct']:+.1f}%" for i in items)
 
     L: list[str] = []
-    L.append(f"📊 시장심리 브리핑 — {as_of} 아침")
+    _today = str(date.today())
+    _basis = f" · 미국장 {as_of} 마감 기준" if as_of != _today else ""
+    L.append(f"📊 시장심리 브리핑 — {_today} 아침{_basis}")
     if ms.get("banner"):
         L.append(f"📅 {ms['banner']}")
     L.append("")

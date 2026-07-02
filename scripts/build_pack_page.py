@@ -103,17 +103,20 @@ TEMPLATE = """<!DOCTYPE html>
 <title>Pivox Brief — Research Pack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root{
-  --bg:#0a0e17;--panel:#111827;--panel2:#1e293b;--soft:#1e293b;
-  --ink:#e2e8f0;--muted:#94a3b8;--faint:#64748b;
-  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.05);
-  --accent:#d4a558;--accent2:#d4a558;--accent-dim:rgba(212,165,88,.13);
-  --up:#D18888;--down:#7AA0C8;--amber:#d6a44f;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* PivoxQuant v3 landing tokens — Vantablack + Ivory + Bronze (globals.css --pq-*) */
+  --bg:#050505;--panel:rgba(245,240,232,.04);--panel2:rgba(245,240,232,.07);--soft:rgba(245,240,232,.07);
+  --ink:#F5F0E8;--muted:#8A8A8A;--faint:rgba(245,240,232,.45);
+  --line:rgba(245,240,232,.10);--line2:rgba(245,240,232,.06);
+  --accent:#B8956A;--accent2:#B8956A;--accent-dim:rgba(184,149,106,.13);
+  --up:#D18888;--down:#7AA0C8;--amber:#a88f4a;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --serif:"Playfair Display",Georgia,"Times New Roman",serif;
-  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -126,7 +129,7 @@ h1{font:600 30px/1.15 var(--serif);margin:0 0 6px;letter-spacing:.01em}
 .search input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font:14px var(--sans);color:var(--ink)}
 .search input::placeholder{color:var(--faint)}
 .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
-.search button{border:1px solid var(--accent);background:var(--accent);color:#0a0e17;border-radius:10px;padding:11px 20px;font:600 13px var(--sans);cursor:pointer;transition:filter .15s}
+.search button{border:1px solid var(--accent);background:var(--accent);color:#050505;border-radius:10px;padding:11px 20px;font:600 13px var(--sans);cursor:pointer;transition:filter .15s}
 .search button:hover{filter:brightness(1.08)}
 .searchmsg{color:var(--muted);font-size:12px;min-height:16px;margin:0 0 8px}
 .searchnote{background:var(--accent-dim);border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:10px;padding:10px 14px;margin:0 0 18px;font-size:12.5px;color:var(--ink)}

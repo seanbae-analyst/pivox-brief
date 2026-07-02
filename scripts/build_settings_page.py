@@ -34,24 +34,25 @@ cfg = json.dumps({
 HTML = """<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>브리핑 설정 — 내가 보고 싶은 것 고르기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{--ink:#e2e8f0;--sub:#94a3b8;--line:#334155;--bg:#0a0e17;--card:#111827;--accent:#d4a558}
+:root{--ink:#F5F0E8;--sub:#8A8A8A;--line:rgba(245,240,232,.12);--bg:#050505;--card:rgba(245,240,232,.04);--accent:#B8956A}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
-font:15px/1.55 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+font:15px/1.55 'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
 .wrap{max-width:600px;margin:0 auto;padding:20px 14px 60px}
 h1{font-size:22px;margin:0 0 2px;letter-spacing:-.4px}.sub{color:var(--sub);font-size:13px;margin:0 0 18px}
 .sec{font-size:13px;font-weight:800;color:var(--ink);margin:22px 2px 8px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .t{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;display:flex;gap:9px;align-items:flex-start}
-.t.on{border-color:var(--accent);background:#2a1c1f}
+.t.on{border-color:var(--accent);background:rgba(184,149,106,.10)}
 .t input{margin:3px 0 0}.t .l{font-weight:700;font-size:14px;display:block}.t .n{display:block;color:var(--sub);font-size:11px;margin-top:3px;line-height:1.4}
 .lv{display:flex;gap:8px}.lv button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer}
-.lv button.on{border-color:var(--accent);background:#1f1a0e;color:var(--accent)}
-input.tx{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px;background:#1e293b;color:var(--ink)}
-.save{margin-top:22px;width:100%;background:var(--accent);color:#0a0e17;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;cursor:pointer}
+.lv button.on{border-color:var(--accent);background:rgba(184,149,106,.10);color:var(--accent)}
+input.tx{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px;background:rgba(245,240,232,.07);color:var(--ink)}
+.save{margin-top:22px;width:100%;background:var(--accent);color:#050505;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;cursor:pointer}
 .save:disabled{background:#4a3f22}
 .msg{text-align:center;font-size:13px;margin-top:10px;min-height:18px}
-.warn{background:#241d0e;border:1px solid #3a3015;border-radius:10px;padding:11px 13px;font-size:13px;color:#d6a44f;margin-bottom:14px}
+.warn{background:rgba(184,149,106,.10);border:1px solid rgba(184,149,106,.35);border-radius:10px;padding:11px 13px;font-size:13px;color:#B8956A;margin-bottom:14px}
 a{color:var(--accent)}
 </style></head><body>__NAV__<div class="wrap">
 <h1>브리핑 설정</h1><p class="sub">내가 보고 싶은 테마·종목·설명 수준을 고르면 내일 아침 브리핑부터 반영돼요.</p>

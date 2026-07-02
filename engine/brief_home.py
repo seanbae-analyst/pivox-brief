@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import math
 
-_UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#94a3b8"
-_UP_BG, _DN_BG = "#2a1c1f", "#17222e"
-_INK, _SUB, _ACCENT, _LINE = "#e2e8f0", "#94a3b8", "#d4a558", "#334155"
+# PivoxQuant v3 landing palette — Vantablack + Ivory + Bronze (frontend globals.css --pq-*)
+_UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#8A8A8A"
+_UP_BG, _DN_BG = "rgba(209,136,136,.10)", "rgba(122,160,200,.10)"
+_INK, _SUB, _ACCENT, _LINE = "#F5F0E8", "#8A8A8A", "#B8956A", "rgba(245,240,232,.12)"
+_SOFT = "rgba(245,240,232,.07)"   # neutral raised surface on Vantablack
 _FEAR = "#cf6b6b"  # risk-off / fear (semantic, distinct from price up/down)
-# mood thermometer calm → fear (cool blue → gold → warm red)
-_MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#d4a558", 4: "#cf9050", 5: "#cf6b6b"}
+# mood thermometer calm → fear (cool blue → bronze → warm red)
+_MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#B8956A", 4: "#cf9050", 5: "#cf6b6b"}
 
 
 def _esc(s) -> str:
@@ -107,7 +109,7 @@ def _stat_strip(b: dict) -> str:
     if not cells:
         return ""
     return (f'<div style="display:flex;flex-wrap:wrap;border:1px solid {_LINE};border-radius:12px;'
-            f'overflow:hidden;background:#111827;margin:0 0 18px;">{cells}</div>')
+            f'overflow:hidden;background:rgba(245,240,232,.03);margin:0 0 18px;">{cells}</div>')
 
 
 def _pair(a: str, b: str) -> str:
@@ -118,7 +120,7 @@ def _pair(a: str, b: str) -> str:
 
 
 def _fg_zone(s):
-    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#d4a558" if s <= 55
+    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#B8956A" if s <= 55
             else "#cf9050" if s <= 75 else "#cf6b6b")
 
 
@@ -130,7 +132,7 @@ def _polar(cx, cy, r, deg):
 def _gauge(score, col, w=210, h=124):
     """Semicircle dial — colored zones (fear→greed) + needle at score."""
     cx, cy, r = w / 2, h - 14, w / 2 - 16
-    zones = [(0, 25, "#7AA0C8"), (25, 45, "#8aa0a8"), (45, 55, "#d4a558"),
+    zones = [(0, 25, "#7AA0C8"), (25, 45, "#8aa0a8"), (45, 55, "#B8956A"),
              (55, 75, "#cf9050"), (75, 100, "#cf6b6b")]
     arcs = ""
     for lo, hi, c in zones:
@@ -172,7 +174,7 @@ def _components(comps):
         out += (
             f'<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">'
             f'<div style="flex:0 0 96px;font-size:12px;color:{_SUB};">{_esc(c["name"])}</div>'
-            f'<div style="flex:1;height:6px;border-radius:3px;background:#1e293b;position:relative;">'
+            f'<div style="flex:1;height:6px;border-radius:3px;background:rgba(245,240,232,.08);position:relative;">'
             f'<div style="position:absolute;left:0;top:0;bottom:0;width:{c["score"]}%;background:{cc};border-radius:3px;"></div></div>'
             f'<div style="flex:0 0 28px;text-align:right;font-size:12px;color:{_INK};{_MONO}">{c["score"]}</div></div>')
     return out
@@ -217,9 +219,9 @@ def _kr_card(kr):
         f_t, r_t = ff["total_tril"], ff["retail_tril"]
         fc = "#cf6b6b" if f_t > 0 else "#7AA0C8"   # 매수=빨강(KR), 매도=파랑
         rc = "#cf6b6b" if r_t > 0 else "#7AA0C8"
-        tag = ("  <b style=\"color:#d4a558;\">⚖ 개미가 받치는 중</b>" if ff.get("divergence") else "")
+        tag = ("  <b style=\"color:#B8956A;\">⚖ 개미가 받치는 중</b>" if ff.get("divergence") else "")
         diverge = (
-            f'<div style="margin:6px 0 4px;padding:10px 12px;background:#0f1626;border-radius:10px;'
+            f'<div style="margin:6px 0 4px;padding:10px 12px;background:rgba(245,240,232,.05);border-radius:10px;'
             f'border-left:3px solid {_ACCENT};font-size:13px;color:{_INK};{_MONO}">'
             f'외국인 <span style="color:{fc};font-weight:700;">{f_t:+.1f}조</span> · '
             f'개인 <span style="color:{rc};font-weight:700;">{r_t:+.1f}조</span> '
@@ -241,7 +243,7 @@ def _hot_chips(items, kr=False):
     cells = ""
     for i in items:
         x = i.get("chg1_pct")
-        bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#1e293b")
+        bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else _SOFT)
         bd = _col(x) + "33"
         # chip → deep-dive: yfinance symbol → pack query (005930.KS → 005930; US tickers as-is)
         code = _re.sub(r"[^A-Za-z0-9.\-]", "", str(i.get("symbol") or "")).split(".")[0]
@@ -264,7 +266,7 @@ def _hot_chips(items, kr=False):
 def render_home_cards(b: dict) -> str:
     risk = b.get("headline", "")
     rcol = _FEAR if "회피" in risk else (_UP if "선호" in risk else _SUB)
-    rbg = "#2a1a1a" if "회피" in risk else (_UP_BG if "선호" in risk else "#1e293b")
+    rbg = "rgba(207,107,107,.08)" if "회피" in risk else (_UP_BG if "선호" in risk else _SOFT)
     P = []
 
     # ── masthead — compact dashboard header. Publication date ≠ data date: the brief goes
@@ -284,7 +286,7 @@ def render_home_cards(b: dict) -> str:
     _ms = b.get("market_status") or {}
     if _ms.get("banner"):
         P.append(
-            f'<div style="margin:0 2px 16px;padding:9px 13px;background:#1e293b;border-radius:9px;'
+            f'<div style="margin:0 2px 16px;padding:9px 13px;background:rgba(245,240,232,.07);border-radius:9px;'
             f'border-left:3px solid {_ACCENT};font-size:13px;color:{_INK};">📅 {_esc(_ms["banner"])}</div>'
         )
     P.append(_stat_strip(b))
@@ -297,9 +299,9 @@ def render_home_cards(b: dict) -> str:
         pos = round((m["level"] - 1) / 4 * 100)
         bar = (
             f'<div style="position:relative;height:8px;border-radius:5px;margin:9px 0 16px;'
-            f'background:linear-gradient(90deg,#7AA0C8,#86a8a0,#d4a558,#cf9050,#cf6b6b);">'
+            f'background:linear-gradient(90deg,#7AA0C8,#86a8a0,#B8956A,#cf9050,#cf6b6b);">'
             f'<div style="position:absolute;top:-4px;left:{pos}%;width:16px;height:16px;border-radius:50%;'
-            f'background:{col};border:3px solid #111827;transform:translateX(-50%);box-shadow:0 0 0 1px {col}cc;"></div></div>'
+            f'background:{col};border:3px solid #050505;transform:translateX(-50%);box-shadow:0 0 0 1px {col}cc;"></div></div>'
         )
         P.append(f'<div style="font-size:15px;font-weight:700;color:{col};margin-bottom:2px;">'
                  f'{m["emoji"]} 시장 기분: {_esc(m["label"])} '
@@ -359,7 +361,7 @@ def render_home_cards(b: dict) -> str:
                      f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>{ana}</div>')
         if b.get("glossary"):
             chips = "".join(
-                f'<span style="display:inline-block;background:#1e293b;border-radius:8px;padding:5px 10px;'
+                f'<span style="display:inline-block;background:rgba(245,240,232,.07);border-radius:8px;padding:5px 10px;'
                 f'margin:6px 6px 0 0;font-size:12px;color:{_INK};"><b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
                 for x in b["glossary"])
             P.append(f'<div style="line-height:1.9;margin-top:4px;">{chips}</div>')

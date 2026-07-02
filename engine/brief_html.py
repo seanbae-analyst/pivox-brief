@@ -8,11 +8,12 @@ movers are the visual hero — big tinted chips with 22px numbers — since that
 """
 from __future__ import annotations
 
-# Vantablack + Bronze: dark terminal, gold accent, up=green / down=red
-_UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#94a3b8"
-_UP_BG, _DN_BG, _FLAT_BG = "#2a1c1f", "#17222e", "#1e293b"
-_INK, _SUB, _LINE, _BG, _CARD = "#e2e8f0", "#94a3b8", "#334155", "#0a0e17", "#111827"
-_ACCENT = "#d4a558"
+# PivoxQuant v3 landing palette — Vantablack + Ivory + Bronze. Email clients choke on
+# rgba/alpha, so raised surfaces are SOLID pre-blended equivalents of the web's ivory washes.
+_UP, _DN, _FLAT = "#D18888", "#7AA0C8", "#8A8A8A"
+_UP_BG, _DN_BG, _FLAT_BG = "#191212", "#111418", "#161514"
+_INK, _SUB, _LINE, _BG, _CARD = "#F5F0E8", "#8A8A8A", "#222120", "#050505", "#0F0E0E"
+_ACCENT = "#B8956A"
 
 
 def _esc(s) -> str:
@@ -91,14 +92,14 @@ def _section_title(text: str) -> str:
 
 
 _FEAR = "#cf6b6b"
-_MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#d4a558", 4: "#cf9050", 5: "#cf6b6b"}
+_MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#B8956A", 4: "#cf9050", 5: "#cf6b6b"}
 
 
 def _thermo(m: dict) -> str:
     lv, col = m["level"], _MOOD_COL.get(m["level"], _SUB)
     segs = ""
     for i in range(1, 6):
-        c = col if i <= lv else "#334155"
+        c = col if i <= lv else "#222120"
         segs += (f'<td height="9" style="background:{c};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
                  f'<td width="4" style="font-size:0;line-height:0;">&nbsp;</td>')
     return (
@@ -125,7 +126,7 @@ def _callout(text: str, color: str, bg: str) -> str:
 
 
 def _fg_zone(s):
-    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#d4a558" if s <= 55
+    return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#B8956A" if s <= 55
             else "#cf9050" if s <= 75 else "#cf6b6b")
 
 
@@ -144,7 +145,7 @@ def _fg_block(fg) -> str:
             f'<td style="padding:5px 10px;width:99%;">'
             f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>'
             f'<td width="{w}%" height="6" style="background:{cc};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
-            f'<td height="6" style="font-size:0;line-height:0;background:#1e293b;border-radius:3px;">&nbsp;</td></tr></table></td>'
+            f'<td height="6" style="font-size:0;line-height:0;background:#161514;border-radius:3px;">&nbsp;</td></tr></table></td>'
             f'<td style="padding:5px 0;text-align:right;font-size:13px;color:{_INK};">{c["score"]}</td></tr>')
     return _card("😱", "공포·탐욕 지수", "CNN식 6요인 합성 · 무료/공식 데이터", rows)
 
@@ -161,22 +162,24 @@ def render_html(b: dict) -> str:
     kr_fx = next((i for i in kr if i["group"] == "환율"), None)
 
     risk = b.get("headline", "")
-    band = (_FEAR, "#2a1a1a") if "회피" in risk else ((_UP, _UP_BG) if "선호" in risk else (_SUB, _FLAT_BG))
+    band = (_FEAR, "#150D0D") if "회피" in risk else ((_UP, _UP_BG) if "선호" in risk else (_SUB, _FLAT_BG))
 
     P = []
     P.append(f'<div style="background:{_BG};padding:18px 12px;">')
     P.append(f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
              f'style="max-width:600px;margin:0 auto;border-collapse:collapse;font-family:'
-             f'-apple-system,BlinkMacSystemFont,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;">')
+             f'\'Pretendard Variable\',Pretendard,-apple-system,BlinkMacSystemFont,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;">')
     P.append('<tr><td>')
 
-    # header
+    # header — publication date (today) ≠ data date (last completed US session); label both
+    pub, dat = b.get("date"), b.get("as_of")
+    when = f'{_esc(pub or dat)} 아침' + (f' · 미국장 {_esc(dat)} 마감 기준' if dat and dat != pub else "")
     P.append(f'<div style="font-size:22px;font-weight:800;color:{_INK};letter-spacing:-.5px;">'
              f'📊 시장심리 브리핑</div>'
-             f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{_esc(b.get("as_of"))} · 아침</div>')
+             f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{when}</div>')
     _ms = b.get("market_status") or {}
     if _ms.get("banner"):
-        P.append(f'<div style="margin:0 0 14px;padding:9px 13px;background:#1e293b;border-radius:9px;'
+        P.append(f'<div style="margin:0 0 14px;padding:9px 13px;background:#161514;border-radius:9px;'
                  f'border-left:3px solid {_DN};font-size:13px;color:{_INK};">📅 {_esc(_ms["banner"])}</div>')
 
     # hero band — headline + plain + (beginner) so-what + thermometer
@@ -203,7 +206,7 @@ def render_html(b: dict) -> str:
 
     # 🔥 HOT — the hero
     if us_hot or kr_hot:
-        P.append(_section_title("🔥 핫 종목 <span style=\"font-size:12px;font-weight:500;color:#5b6470;\">오늘 제일 많이 움직인</span>"))
+        P.append(_section_title("🔥 핫 종목 <span style=\"font-size:12px;font-weight:500;color:#8A8A8A;\">오늘 제일 많이 움직인</span>"))
         if us_hot:
             P.append(f'<div style="font-size:13px;font-weight:700;color:{_SUB};margin:6px 2px 2px;">🇺🇸 미국</div>')
             P.append(_hot_grid(us_hot))
@@ -221,7 +224,7 @@ def render_html(b: dict) -> str:
     if body:
         P.append(_card("🇺🇸", "미국장", "어제 마감 · 5일 변화", body))
         if b.get("us_rotation"):
-            P.append(_callout(f'<b>한눈에</b>  {_esc(b["us_rotation"])}', band[0], "#1e293b"))
+            P.append(_callout(f'<b>한눈에</b>  {_esc(b["us_rotation"])}', band[0], "#161514"))
 
     # KR card
     body = _rows(kr_idx)
@@ -233,11 +236,11 @@ def render_html(b: dict) -> str:
     if body:
         P.append(_card("🇰🇷", "한국장", "오늘 마감 · 5일 변화", body))
         if b.get("kr_read"):
-            P.append(_callout(f'<b>한눈에</b>  {_esc(b["kr_read"])}', band[0], "#1e293b"))
+            P.append(_callout(f'<b>한눈에</b>  {_esc(b["kr_read"])}', band[0], "#161514"))
 
     # watch
     if b.get("watch"):
-        P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#d4a558", "#241d0e"))
+        P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#B8956A", "#17130F"))
 
     # 📖 배우기 (초보 모드) — 오늘의 용어 + 용어 풀이
     if b.get("teach"):
@@ -256,7 +259,7 @@ def render_html(b: dict) -> str:
             )
         if b.get("glossary"):
             chips = "".join(
-                f'<span style="display:inline-block;background:#1e293b;border-radius:8px;'
+                f'<span style="display:inline-block;background:#161514;border-radius:8px;'
                 f'padding:5px 10px;margin:0 6px 6px 0;font-size:12px;color:{_INK};">'
                 f'<b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
                 for x in b["glossary"])
@@ -297,6 +300,7 @@ def render_page(b: dict) -> str:
     return (
         '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">'
         f'<title>시장심리 브리핑 — {_esc(b.get("as_of"))}</title>'
         f'<meta name="description" content="매일 아침 시장심리 브리핑 — {_esc(b.get("headline",""))}">'
         f'</head><body style="margin:0;background:{_BG};">{nav("home")}{inner}</body></html>'
