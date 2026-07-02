@@ -170,9 +170,11 @@ def render_html(b: dict) -> str:
              f'\'Pretendard Variable\',Pretendard,-apple-system,BlinkMacSystemFont,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;">')
     P.append('<tr><td>')
 
-    # header — publication date (today) ≠ data date (last completed US session); label both
-    pub, dat = b.get("date"), b.get("as_of")
-    when = f'{_esc(pub or dat)} 아침' + (f' · 미국장 {_esc(dat)} 마감 기준' if dat and dat != pub else "")
+    # header — edition (아침/점심/저녁) + honest data-basis note from engine/brief._edition
+    pub = b.get("date") or b.get("as_of")
+    ed = b.get("edition") or "아침"
+    basis = b.get("data_basis") or ""
+    when = f'{_esc(pub)} {ed}' + (f' · {_esc(basis)}' if basis else "")
     P.append(f'<div style="font-size:22px;font-weight:700;color:{_INK};letter-spacing:-.5px;">'
              f'시장심리 브리핑</div>'
              f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{when}</div>')

@@ -63,6 +63,19 @@ def _calendars(year):
         return None, None
 
 
+def _edition(as_of: str) -> tuple[str, str]:
+    """3-a-day editions by build hour (job runs TZ=Asia/Seoul): 아침 = post-US-close pre-KR-open
+    snapshot (email goes out), 점심 = KR mid-session web refresh, 저녁 = KR close web refresh.
+    Returns (label, data-basis note) so headers state honestly what the numbers are as of."""
+    h = datetime.now().hour
+    today = str(date.today())
+    if h < 10:
+        return "아침", (f"미국장 {as_of} 마감 기준" if as_of != today else "")
+    if h < 14:
+        return "점심", "한국장 장중 — 시세 15분+ 지연 가능"
+    return "저녁", "한국장 당일 마감 기준"
+
+
 def market_status(today, us_as_of=None, kr_as_of=None) -> dict:
     """Is each market closed TODAY — from real exchange holiday calendars (NYSE + KR public
     holidays via the `holidays` lib), not data-staleness. This is correct even at the 7:30 KST
@@ -269,6 +282,7 @@ def build_brief(lang: str = "ko") -> dict:
     pos_ds = [p["days_old"] for p in positioning if p.get("days_old") is not None]
     lag = min(pos_ds) if pos_ds else None
     as_of = (flow_list[0]["as_of"] if flow_list else None) or (rates or {}).get("as_of") or str(date.today())
+    edition, data_basis = _edition(as_of)
     ms = market_status(date.today(), (sectors or {}).get("us_as_of") or as_of,
                        (sectors or {}).get("kr_as_of"))
     headline = _tilt(flow)
@@ -312,8 +326,8 @@ def build_brief(lang: str = "ko") -> dict:
 
     L: list[str] = []
     _today = str(date.today())
-    _basis = f" · 미국장 {as_of} 마감 기준" if as_of != _today else ""
-    L.append(f"📊 시장심리 브리핑 — {_today} 아침{_basis}")
+    _basis = f" · {data_basis}" if data_basis else ""
+    L.append(f"시장심리 브리핑 — {_today} {edition}{_basis}")
     if ms.get("banner"):
         L.append(f"📅 {ms['banner']}")
     L.append("")
@@ -424,6 +438,7 @@ def build_brief(lang: str = "ko") -> dict:
 
     brief = {
         "date": str(date.today()), "as_of": as_of, "headline": headline,
+        "edition": edition, "data_basis": data_basis,
         "market_status": ms,
         "plain": plain, "alerts": alerts, "watch": watch, "quiet": quiet,
         "regime": regime, "positioning": positioning, "extremes": extremes,

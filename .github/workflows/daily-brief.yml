@@ -14,9 +14,19 @@ name: Daily Brief
 # UTC↔KST day shift: KST Mon–Fri 06:50 == UTC Sun–Thu 21:50 → days 0-4.
 # The job runs in Asia/Seoul time so datetime.now() produces the KST date.
 
+# Three editions per KR trading day (web refresh ×3, email ×1):
+#   아침 06:50 KST — full build + EMAIL. Post-US-close, pre-KR-open.
+#   점심 12:40 KST — web-only refresh. KR mid-session snapshot (delayed quotes, labeled).
+#   저녁 16:10 KST — web-only refresh. KR close confirmed, pre-US-open.
+# The edition label + data-basis note render from build hour (engine/brief._edition).
+# UTC↔KST day shift applies ONLY to the morning slot (06:50 KST == prev-day UTC);
+# lunch/evening are same-day UTC, hence different day-of-week fields.
+
 on:
   schedule:
-    - cron: "50 21 * * 0-4"   # 06:50 KST Mon–Fri (UTC Sun–Thu)
+    - cron: "50 21 * * 0-4"   # 아침 06:50 KST Mon–Fri (UTC Sun–Thu) — email
+    - cron: "40 3 * * 1-5"    # 점심 12:40 KST Mon–Fri — web only
+    - cron: "10 7 * * 1-5"    # 저녁 16:10 KST Mon–Fri — web only
   workflow_dispatch: {}       # manual "Run workflow" button
 
 permissions:
@@ -65,7 +75,18 @@ jobs:
           SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           EOF
 
-      - name: Build site
+      - name: Determine edition (by KST hour — matches engine/brief._edition)
+        id: ed
+        run: |
+          H=$(date +%H)
+          if [ "$H" -lt 10 ]; then E=morning; elif [ "$H" -lt 14 ]; then E=lunch; else E=evening; fi
+          echo "edition=$E" >> "$GITHUB_OUTPUT"
+          echo "edition=$E (KST hour $H)"
+
+      # Full research-pack refetch (EDGAR/DART/peers/analysts) only in the morning —
+      # filings don't change intraday; lunch/evening just refresh the market brief.
+      - name: Build site (morning only)
+        if: steps.ed.outputs.edition == 'morning'
         run: python scripts/build_site.py
 
       - name: JS sanity gate (never ship an unparseable page)
@@ -79,11 +100,18 @@ jobs:
           node --check /tmp/pb_check.js
 
       - name: Morning brief (email + web)
+        if: steps.ed.outputs.edition == 'morning'
         run: python scripts/brief.py --send --web --quiet || echo "brief step failed (non-fatal)"
 
-      - name: Settings page + home inject
+      - name: Midday/evening brief (web only — no email)
+        if: steps.ed.outputs.edition != 'morning'
+        run: python scripts/brief.py --web --quiet || echo "brief step failed (non-fatal)"
+
+      - name: Settings page (morning only) + home inject (every edition)
         run: |
-          python scripts/build_settings_page.py || echo "settings page failed (non-fatal)"
+          if [ "${{ steps.ed.outputs.edition }}" = "morning" ]; then
+            python scripts/build_settings_page.py || echo "settings page failed (non-fatal)"
+          fi
           python scripts/inject_home.py || echo "home inject failed (non-fatal)"
 
       # Pushing docs/ to main auto-triggers the GitHub Pages build
