@@ -8,8 +8,8 @@ lives under /pivox-brief/ and "/" is the (404) user root. Relative works on Verc
 from __future__ import annotations
 
 _LINKS = [
-    ("home", "./pack.html", "📊 오늘의 시장"),
-    ("settings", "./settings.html", "⚙️ 설정"),
+    ("home", "./pack.html", "오늘의 시장"),
+    ("settings", "./settings.html", "설정"),
 ]
 
 

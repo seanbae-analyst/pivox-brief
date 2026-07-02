@@ -43,7 +43,7 @@ def _hot_grid(items: list[dict]) -> str:
         x = i.get("chg1_pct")
         cells.append(
             f'<td width="50%" valign="top" style="padding:4px;">'
-            f'<div style="background:{_tint(x)};border-radius:12px;padding:11px 13px;">'
+            f'<div style="background:{_tint(x)};border-radius:4px;padding:11px 13px;">'
             f'<div style="font-size:13px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;">{_esc(i["label"])}</div>'
             f'<div style="font-size:23px;color:{_col(x)};font-weight:800;line-height:1.15;letter-spacing:-.3px;white-space:nowrap;">{_arr(x)} {x:+.1f}%</div>'
             f'</div></td>'
@@ -77,8 +77,8 @@ def _card(flag: str, title: str, sub: str, body: str) -> str:
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:separate;background:{_CARD};border:1px solid {_LINE};'
-        f'border-radius:16px;margin:0 0 14px;"><tr><td style="padding:16px 18px;">'
-        f'<div style="font-size:16px;font-weight:800;color:{_INK};letter-spacing:-.2px;">{flag} {_esc(title)}'
+        f'border-radius:4px;margin:0 0 14px;"><tr><td style="padding:16px 18px;">'
+        f'<div style="font-size:16px;font-weight:800;color:{_INK};letter-spacing:-.2px;">{(flag + " ") if flag else ""}{_esc(title)}'
         f'<span style="font-weight:500;color:{_SUB};font-size:12px;">  {_esc(sub)}</span></div>'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:collapse;margin-top:6px;">{body}</table>'
@@ -105,7 +105,6 @@ def _thermo(m: dict) -> str:
     return (
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:collapse;margin-top:10px;"><tr>'
-        f'<td width="34" style="font-size:26px;vertical-align:middle;">{m["emoji"]}</td>'
         f'<td style="vertical-align:middle;">'
         f'<div style="font-size:14px;font-weight:800;color:{col};">시장 기분: {_esc(m["label"])} '
         f'<span style="font-weight:500;color:{_SUB};font-size:12px;">5단계 중 {lv} · {_esc(m["note"])}</span></div>'
@@ -120,7 +119,7 @@ def _callout(text: str, color: str, bg: str) -> str:
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="border-collapse:separate;margin:2px 0 12px;"><tr>'
         f'<td style="padding:11px 14px;background:{bg};border-left:4px solid {color};'
-        f'border-radius:8px;font-size:14px;color:{_INK};line-height:1.5;">{text}</td>'
+        f'border-radius:4px;font-size:14px;color:{_INK};line-height:1.5;">{text}</td>'
         f'</tr></table>'
     )
 
@@ -147,7 +146,7 @@ def _fg_block(fg) -> str:
             f'<td width="{w}%" height="6" style="background:{cc};font-size:0;line-height:0;border-radius:3px;">&nbsp;</td>'
             f'<td height="6" style="font-size:0;line-height:0;background:#161514;border-radius:3px;">&nbsp;</td></tr></table></td>'
             f'<td style="padding:5px 0;text-align:right;font-size:13px;color:{_INK};">{c["score"]}</td></tr>')
-    return _card("😱", "공포·탐욕 지수", "CNN식 6요인 합성 · 무료/공식 데이터", rows)
+    return _card("", "공포·탐욕 지수", "CNN식 6요인 합성 · 무료/공식 데이터", rows)
 
 
 def render_html(b: dict) -> str:
@@ -175,12 +174,12 @@ def render_html(b: dict) -> str:
     pub, dat = b.get("date"), b.get("as_of")
     when = f'{_esc(pub or dat)} 아침' + (f' · 미국장 {_esc(dat)} 마감 기준' if dat and dat != pub else "")
     P.append(f'<div style="font-size:22px;font-weight:800;color:{_INK};letter-spacing:-.5px;">'
-             f'📊 시장심리 브리핑</div>'
+             f'시장심리 브리핑</div>'
              f'<div style="font-size:12px;color:{_SUB};margin:2px 0 12px;">{when}</div>')
     _ms = b.get("market_status") or {}
     if _ms.get("banner"):
-        P.append(f'<div style="margin:0 0 14px;padding:9px 13px;background:#161514;border-radius:9px;'
-                 f'border-left:3px solid {_DN};font-size:13px;color:{_INK};">📅 {_esc(_ms["banner"])}</div>')
+        P.append(f'<div style="margin:0 0 14px;padding:9px 13px;background:#161514;border-radius:4px;'
+                 f'border-left:3px solid {_DN};font-size:13px;color:{_INK};">{_esc(_ms["banner"])}</div>')
 
     # hero band — headline + plain + (beginner) so-what + thermometer
     guide = b.get("guide")
@@ -194,24 +193,24 @@ def render_html(b: dict) -> str:
         hero += _thermo(b["mood"])
     P.append(f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
              f'style="border-collapse:separate;margin:0 0 16px;"><tr><td '
-             f'style="background:{band[1]};border-radius:14px;padding:16px 18px;">{hero}</td></tr></table>')
+             f'style="background:{band[1]};border-radius:4px;padding:16px 18px;">{hero}</td></tr></table>')
 
     # alerts
     if b.get("alerts"):
         items = "".join(f'<div style="margin:3px 0;">• {_esc(a)}</div>' for a in b["alerts"])
-        P.append(_callout(f'<b>🚨 큰 움직임</b><div style="margin-top:4px;">{items}</div>', _DN, _DN_BG))
+        P.append(_callout(f'<b>큰 움직임</b><div style="margin-top:4px;">{items}</div>', _DN, _DN_BG))
 
     # 공포·탐욕 지수
     P.append(_fg_block(b.get("fear_greed")))
 
     # 🔥 HOT — the hero
     if us_hot or kr_hot:
-        P.append(_section_title("🔥 핫 종목 <span style=\"font-size:12px;font-weight:500;color:#8A8A8A;\">오늘 제일 많이 움직인</span>"))
+        P.append(_section_title("핫 종목 <span style=\"font-size:12px;font-weight:500;color:#8A8A8A;\">오늘 제일 많이 움직인</span>"))
         if us_hot:
-            P.append(f'<div style="font-size:13px;font-weight:700;color:{_SUB};margin:6px 2px 2px;">🇺🇸 미국</div>')
+            P.append(f'<div style="font-size:13px;font-weight:700;color:{_SUB};margin:6px 2px 2px;">미국</div>')
             P.append(_hot_grid(us_hot))
         if kr_hot:
-            P.append(f'<div style="font-size:13px;font-weight:700;color:{_SUB};margin:10px 2px 2px;">🇰🇷 한국</div>')
+            P.append(f'<div style="font-size:13px;font-weight:700;color:{_SUB};margin:10px 2px 2px;">한국</div>')
             P.append(_hot_grid(kr_hot))
         P.append('<div style="height:14px;"></div>')
 
@@ -222,7 +221,7 @@ def render_html(b: dict) -> str:
             body += f'<tr><td colspan="2" style="border-top:1px solid {_LINE};padding-top:2px;"></td></tr>'
         body += _rows(us_sec)
     if body:
-        P.append(_card("🇺🇸", "미국장", "어제 마감 · 5일 변화", body))
+        P.append(_card("", "미국장", "어제 마감 · 5일 변화", body))
         if b.get("us_rotation"):
             P.append(_callout(f'<b>한눈에</b>  {_esc(b["us_rotation"])}', band[0], "#161514"))
 
@@ -234,24 +233,24 @@ def render_html(b: dict) -> str:
                  f'<td style="padding:7px 0;text-align:right;font-size:15px;font-weight:800;color:{_col(kr_fx["chg5_pct"])};white-space:nowrap;">'
                  f'{kr_fx["last"]:,.0f}원 · {won}</td></tr>')
     if body:
-        P.append(_card("🇰🇷", "한국장", "오늘 마감 · 5일 변화", body))
+        P.append(_card("", "한국장", "오늘 마감 · 5일 변화", body))
         if b.get("kr_read"):
             P.append(_callout(f'<b>한눈에</b>  {_esc(b["kr_read"])}', band[0], "#161514"))
 
     # watch
     if b.get("watch"):
-        P.append(_callout(f'<b>⚠️ 주목</b>  {_esc(b["watch"])}', "#B8956A", "#17130F"))
+        P.append(_callout(f'<b>주목</b>  {_esc(b["watch"])}', "#B8956A", "#17130F"))
 
     # 📖 배우기 (초보 모드) — 오늘의 용어 + 용어 풀이
     if b.get("teach"):
-        P.append(_section_title("📖 배우기"))
+        P.append(_section_title("배우기"))
         tod = b.get("term_of_day")
         if tod:
             ana = f'<div style="font-size:13px;color:{_SUB};margin-top:5px;line-height:1.5;">비유: {_esc(tod["analogy"])}</div>' if tod.get("analogy") else ""
             P.append(
                 f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
                 f'style="border-collapse:separate;margin:0 0 10px;"><tr><td '
-                f'style="background:{_UP_BG};border-radius:12px;padding:13px 15px;">'
+                f'style="background:{_UP_BG};border-radius:4px;padding:13px 15px;">'
                 f'<div style="font-size:12px;font-weight:700;color:{_ACCENT};">오늘의 용어</div>'
                 f'<div style="font-size:16px;font-weight:800;color:{_INK};margin-top:2px;">{_esc(tod["term"])}</div>'
                 f'<div style="font-size:13px;color:{_INK};margin-top:4px;line-height:1.55;">{_esc(tod["long"])}</div>'
@@ -259,7 +258,7 @@ def render_html(b: dict) -> str:
             )
         if b.get("glossary"):
             chips = "".join(
-                f'<span style="display:inline-block;background:#161514;border-radius:8px;'
+                f'<span style="display:inline-block;background:#161514;border-radius:4px;'
                 f'padding:5px 10px;margin:0 6px 6px 0;font-size:12px;color:{_INK};">'
                 f'<b>{_esc(x["term"])}</b> {_esc(x["gloss"])}</span>'
                 for x in b["glossary"])
