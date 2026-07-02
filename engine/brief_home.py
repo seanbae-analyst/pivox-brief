@@ -240,11 +240,16 @@ def render_home_cards(b: dict) -> str:
     rbg = "#2a1a1a" if "회피" in risk else (_UP_BG if "선호" in risk else "#1e293b")
     P = []
 
-    # ── masthead — compact dashboard header (dated kicker + one-line serif tagline) ──
+    # ── masthead — compact dashboard header. Publication date ≠ data date: the brief goes
+    # out TODAY morning (b["date"]) about the LAST COMPLETED US session (b["as_of"]) —
+    # mixing them into one date read as "yesterday's brief". Show both, labeled.
+    pub, dat = b.get("date"), b.get("as_of")
+    data_note = (f' <span style="color:{_SUB};letter-spacing:.08em;">· 미국장 {_esc(dat)} 마감 기준</span>'
+                 if dat and dat != pub else "")
     P.append(
         f'<div style="padding:2px 2px 14px;">'
         f'<div style="font:600 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:{_ACCENT};">'
-        f'시장심리 브리핑 · {_esc(b.get("as_of"))} 아침</div>'
+        f'시장심리 브리핑 · {_esc(pub or dat)} 아침{data_note}</div>'
         f'<div style="font-family:var(--serif);font-weight:600;font-size:21px;color:{_INK};margin-top:6px;line-height:1.25;letter-spacing:.01em;">'
         f'Market psychology, distilled every morning.</div>'
         f'</div>'

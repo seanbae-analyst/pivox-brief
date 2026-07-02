@@ -178,11 +178,12 @@ ul.list b{color:var(--ink);font-weight:600}
 [hidden]{display:none!important}
 .cmdbar{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 11px;margin:0 0 18px}
 .cmdbar .search{margin:0 0 4px}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;align-items:start}
 .dgrid>.card{margin-bottom:0}
 @media(max-width:880px){.dgrid{grid-template-columns:1fr}}
 .hotchip{cursor:pointer;transition:border-color .15s,transform .15s}
-.hotchip:hover{border-color:var(--accent)!important;transform:translateY(-1px)}
+.hotchip:hover,.hotchip:focus-visible{border-color:var(--accent)!important;transform:translateY(-1px)}
+.hotchip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
 .examples .lbl{color:var(--faint);font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;margin-right:2px}
 .ex{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 13px;font:600 12px var(--mono);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
@@ -209,7 +210,7 @@ ul.list b{color:var(--ink);font-weight:600}
 <div class="wrap">
 <section id="home">
 <div class="cmdbar">
-<form class="search" id="search"><input id="q" type="text" placeholder="종목 딥다이브 검색 — TSLA, MU, 005930, 카카오 · 공식 공시 기반(EDGAR·DART)" autocomplete="off" spellcheck="false"><button type="submit">검색</button></form>
+<form class="search" id="search"><input id="q" type="text" placeholder="종목 딥다이브 검색 — TSLA, 005930, 카카오" autocomplete="off" spellcheck="false"><button type="submit">검색</button></form>
 <div class="searchmsg" id="searchmsg"></div>
 <div class="examples" id="examples"></div>
 </div>
@@ -564,6 +565,10 @@ if(_sf)_sf.addEventListener('submit',e=>{e.preventDefault();const v=document.get
 const _bk=document.getElementById('back');
 if(_bk)_bk.addEventListener('click',e=>{e.preventDefault();history.pushState({},'',location.pathname);showHome();});
 window.addEventListener('popstate',route);
+document.addEventListener('keydown',e=>{
+  const t=e.target;
+  if((e.key==='Enter'||e.key===' ')&&t.classList&&t.classList.contains('hotchip')){e.preventDefault();t.click();}
+});
 buildExamples();
 route();
 </script>
