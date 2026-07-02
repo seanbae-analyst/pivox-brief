@@ -4,12 +4,19 @@ name: Daily Brief
 # Runs on GitHub-hosted runners (free — repo is public), so it no longer
 # depends on the founder's Mac being awake. Mirrors scripts/refresh_and_deploy.sh.
 #
-# 07:30 KST == 22:30 UTC (KST = UTC+9). The whole job runs in Asia/Seoul time
-# so datetime.now() in the Python scripts produces the correct KST date.
+# Target: land in the inbox BY 07:30 KST on KR trading mornings (Mon–Fri).
+# Scheduled at 21:50 UTC == 06:50 KST because (a) GitHub cron fires late —
+# often 10–30 min at busy :00/:30 slots — and (b) the build itself takes
+# minutes; 06:50 absorbs both. US session is closed by 05:00 KST, so pulling
+# earlier loses no data. Weekend sends are OFF (weekday-only habit: a Sat/Sun
+# brief with no KR session ahead trains readers to ignore the mail; Friday's
+# US close is covered by Monday's brief via the '마감 기준' header).
+# UTC↔KST day shift: KST Mon–Fri 06:50 == UTC Sun–Thu 21:50 → days 0-4.
+# The job runs in Asia/Seoul time so datetime.now() produces the KST date.
 
 on:
   schedule:
-    - cron: "30 22 * * *"   # 07:30 KST daily
+    - cron: "50 21 * * 0-4"   # 06:50 KST Mon–Fri (UTC Sun–Thu)
   workflow_dispatch: {}       # manual "Run workflow" button
 
 permissions:
