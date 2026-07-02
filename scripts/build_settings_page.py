@@ -15,6 +15,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv()  # SUPABASE_URL / SUPABASE_ANON_KEY — CI writes .env from secrets
+
 from engine.themes import THEMES  # noqa: E402
 from engine.watchlist import DEFAULT  # noqa: E402
 from engine.webnav import nav  # noqa: E402

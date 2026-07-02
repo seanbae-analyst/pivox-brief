@@ -61,6 +61,8 @@ jobs:
           KIS_APP_KEY=${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET=${{ secrets.KIS_APP_SECRET }}
           KIS_USE_REAL=${{ secrets.KIS_USE_REAL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
           EOF
 
       - name: Build site
