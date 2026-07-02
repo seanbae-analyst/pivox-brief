@@ -90,6 +90,13 @@ def _stat_strip(b: dict) -> str:
             f'overflow:hidden;background:#111827;margin:0 0 18px;">{cells}</div>')
 
 
+def _pair(a: str, b: str) -> str:
+    """Two cards side-by-side on desktop (template .dgrid), stacked on mobile; solo → full width."""
+    if a and b:
+        return f'<div class="dgrid">{a}{b}</div>'
+    return a or b or ""
+
+
 def _fg_zone(s):
     return ("#7AA0C8" if s < 25 else "#86a8a0" if s < 45 else "#d4a558" if s <= 55
             else "#cf9050" if s <= 75 else "#cf6b6b")
@@ -210,12 +217,17 @@ def _kr_card(kr):
 
 
 def _hot_chips(items):
+    import re as _re
     cells = ""
     for i in items:
         x = i.get("chg1_pct")
         bg = _UP_BG if (x or 0) > 0 else (_DN_BG if (x or 0) < 0 else "#1e293b")
         bd = _col(x) + "33"
-        cells += (f'<div style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
+        # chip → deep-dive: yfinance symbol → pack query (005930.KS → 005930; US tickers as-is)
+        code = _re.sub(r"[^A-Za-z0-9.\-]", "", str(i.get("symbol") or "")).split(".")[0]
+        click = (f' class="hotchip" role="button" tabindex="0" onclick="openTicker(\'{code}\')"'
+                 f' title="{_esc(i["label"])} 딥다이브 열기"') if code else ""
+        cells += (f'<div{click} style="background:{bg};border:1px solid {bd};border-radius:10px;padding:9px 11px;">'
                   f'<div style="font-size:12px;color:{_col(x)};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_esc(i["label"])}</div>'
                   f'<div style="font-size:19px;color:{_col(x)};font-weight:700;line-height:1.2;{_MONO}">{_arr(x)} {x:+.1f}%</div>'
                   f'{_spark(i.get("spark"), _col(x))}</div>')
@@ -228,14 +240,13 @@ def render_home_cards(b: dict) -> str:
     rbg = "#2a1a1a" if "회피" in risk else (_UP_BG if "선호" in risk else "#1e293b")
     P = []
 
-    # ── masthead — editorial Playfair tagline + dated kicker ──
+    # ── masthead — compact dashboard header (dated kicker + one-line serif tagline) ──
     P.append(
-        f'<div style="padding:4px 2px 20px;">'
+        f'<div style="padding:2px 2px 14px;">'
         f'<div style="font:600 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:{_ACCENT};">'
         f'시장심리 브리핑 · {_esc(b.get("as_of"))} 아침</div>'
-        f'<div style="font-family:var(--serif);font-weight:600;font-size:31px;color:{_INK};margin-top:10px;line-height:1.18;letter-spacing:.01em;">'
-        f'Market psychology,<br>distilled every morning.</div>'
-        f'<div style="height:2px;width:48px;background:{_ACCENT};opacity:.8;margin-top:16px;border-radius:1px;"></div>'
+        f'<div style="font-family:var(--serif);font-weight:600;font-size:21px;color:{_INK};margin-top:6px;line-height:1.25;letter-spacing:.01em;">'
+        f'Market psychology, distilled every morning.</div>'
         f'</div>'
     )
     _ms = b.get("market_status") or {}
@@ -271,38 +282,38 @@ def render_home_cards(b: dict) -> str:
                  f'<b style="color:{rcol};">그래서 뭐?</b> {_esc(b["sowhat"])}</p>')
     P.append('</div>')
 
-    # ── 공포·탐욕 지수 (centerpiece) + 한국 시장심리 ──
-    P.append(_fg_card(b.get("fear_greed")))
-    P.append(_kr_card(b.get("korea")))
+    # ── 공포·탐욕 지수 + 한국 시장심리 — side-by-side on desktop (dashboard grid) ──
+    P.append(_pair(_fg_card(b.get("fear_greed")), _kr_card(b.get("korea"))))
 
-    # ── 🔥 핫 종목 ──
+    # ── 🔥 핫 종목 (full width; chips open the ticker deep-dive) ──
     us_hot, kr_hot = b.get("us_hot") or [], b.get("kr_hot") or []
     if us_hot or kr_hot:
         P.append('<div class="card"><h3>핫 종목 · 오늘 제일 많이 움직인</h3>')
+        P.append(f'<p style="font-size:11.5px;color:{_SUB};margin:-8px 0 10px;">칩을 누르면 그 종목의 공시 기반 딥다이브로 넘어가요</p>')
         if us_hot:
             P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:0 0 6px;">🇺🇸 미국</div>{_hot_chips(us_hot)}')
         if kr_hot:
             P.append(f'<div style="font-size:12px;font-weight:700;color:{_SUB};margin:12px 0 6px;">🇰🇷 한국</div>{_hot_chips(kr_hot)}')
         P.append('</div>')
 
-    # ── 미국장 / 한국장 ──
+    # ── 미국장 / 한국장 — side-by-side on desktop ──
     sectors = b.get("sectors") or {}
     us, kr = sectors.get("us") or [], sectors.get("kr") or []
     us_idx = [(i["label"], i["chg5_pct"]) for i in us if i["group"] == "지수"]
     us_sec = [(i["label"], i["chg5_pct"]) for i in us if i["group"] == "섹터"]
     kr_idx = [(i["label"], i["chg5_pct"]) for i in kr if i["group"] == "지수"]
+    us_card = kr_card = ""
     if us_idx or us_sec:
-        P.append('<div class="card"><h3>🇺🇸 미국장 · 5일 변화</h3>')
-        P.append(_table(us_idx + us_sec))
+        us_card = '<div class="card"><h3>🇺🇸 미국장 · 5일 변화</h3>' + _table(us_idx + us_sec)
         if b.get("us_rotation"):
-            P.append(f'<p style="font-size:13px;color:{_INK};margin:10px 0 0;padding-left:10px;border-left:3px solid {_ACCENT};line-height:1.5;"><b>한눈에</b> {_esc(b["us_rotation"])}</p>')
-        P.append('</div>')
+            us_card += f'<p style="font-size:13px;color:{_INK};margin:10px 0 0;padding-left:10px;border-left:3px solid {_ACCENT};line-height:1.5;"><b>한눈에</b> {_esc(b["us_rotation"])}</p>'
+        us_card += '</div>'
     if kr_idx:
-        P.append('<div class="card"><h3>🇰🇷 한국장 · 5일 변화</h3>')
-        P.append(_table(kr_idx))
+        kr_card = '<div class="card"><h3>🇰🇷 한국장 · 5일 변화</h3>' + _table(kr_idx)
         if b.get("kr_read"):
-            P.append(f'<p style="font-size:13px;color:{_INK};margin:10px 0 0;padding-left:10px;border-left:3px solid {_ACCENT};line-height:1.5;"><b>한눈에</b> {_esc(b["kr_read"])}</p>')
-        P.append('</div>')
+            kr_card += f'<p style="font-size:13px;color:{_INK};margin:10px 0 0;padding-left:10px;border-left:3px solid {_ACCENT};line-height:1.5;"><b>한눈에</b> {_esc(b["kr_read"])}</p>'
+        kr_card += '</div>'
+    P.append(_pair(us_card, kr_card))
 
     # ── 📖 배우기 (초보) ──
     if b.get("teach"):
@@ -322,11 +333,5 @@ def render_home_cards(b: dict) -> str:
             P.append(f'<div style="line-height:1.9;margin-top:4px;">{chips}</div>')
         P.append('</div>')
 
-    src = f'<div style="font-size:11px;color:{_SUB};margin:0 2px 16px;font-family:var(--mono);">DATA · yfinance · CFTC · FRED · US Treasury · 정보 제공용, 투자자문 아님</div>'
-    divider = (
-        f'<div style="display:flex;align-items:center;gap:12px;margin:4px 2px 20px;">'
-        f'<div style="flex:1;height:1px;background:{_LINE};"></div>'
-        f'<div style="font:600 10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:{_ACCENT};">종목 깊이 보기 ↓</div>'
-        f'<div style="flex:1;height:1px;background:{_LINE};"></div></div>'
-    )
-    return f'<div style="margin-bottom:8px;">{"".join(P)}</div>{src}{divider}'
+    src = f'<div style="font-size:11px;color:{_SUB};margin:0 2px 8px;font-family:var(--mono);">DATA · yfinance · CFTC · FRED · US Treasury · 정보 제공용, 투자자문 아님</div>'
+    return f'<div style="margin-bottom:8px;">{"".join(P)}</div>{src}'

@@ -20,6 +20,7 @@ load_dotenv()
 
 PACK = ROOT / "docs" / "pack.html"
 MARK = "<!--BRIEF-HOME-->"
+SLOT = "<!--BRIEF-SLOT-->"   # template anchor — brief renders below the search command bar
 
 
 def main() -> int:
@@ -40,7 +41,10 @@ def main() -> int:
         return 0
 
     block = f"{MARK}{cards}{MARK}"
-    html = html.replace('<section id="home">', '<section id="home">' + block, 1)
+    if SLOT in html:                       # dashboard layout: brief sits under the command bar
+        html = html.replace(SLOT, SLOT + block, 1)
+    else:                                  # legacy template fallback
+        html = html.replace('<section id="home">', '<section id="home">' + block, 1)
     PACK.write_text(html, encoding="utf-8")
     print(f"injected brief into {PACK} ({len(cards)} bytes)")
     return 0

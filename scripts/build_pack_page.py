@@ -119,7 +119,7 @@ TEMPLATE = """<!DOCTYPE html>
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 ::selection{background:var(--accent-dim)}
-.wrap{max-width:960px;margin:0 auto;padding:48px 24px 80px}
+.wrap{max-width:960px;margin:0 auto;padding:22px 24px 80px}
 h1{font:600 30px/1.15 var(--serif);margin:0 0 6px;letter-spacing:.01em}
 .sub{color:var(--muted);font-size:13.5px;margin:0 0 26px;max-width:680px}
 .search{display:flex;gap:10px;margin:0 0 10px}
@@ -176,20 +176,18 @@ ul.list b{color:var(--ink);font-weight:600}
 .covlabel{font-weight:700;margin-right:6px;white-space:nowrap}
 .cov-ok{color:var(--up)}.cov-mid{color:var(--amber)}.cov-out{color:var(--down)}
 [hidden]{display:none!important}
-.hero{padding:8px 0}
-#home{position:relative;min-height:66vh;display:flex;flex-direction:column;justify-content:center}
-#home::before{content:"";position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);width:680px;max-width:88vw;height:360px;background:radial-gradient(ellipse at center,rgba(212,165,88,.10),transparent 70%);pointer-events:none;z-index:0}
-.hero{position:relative;z-index:1;animation:heroIn .5s ease both}
-@keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.hero{animation:none}}
-.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:18px}
+.cmdbar{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 11px;margin:0 0 18px}
+.cmdbar .search{margin:0 0 4px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.dgrid>.card{margin-bottom:0}
+@media(max-width:880px){.dgrid{grid-template-columns:1fr}}
+.hotchip{cursor:pointer;transition:border-color .15s,transform .15s}
+.hotchip:hover{border-color:var(--accent)!important;transform:translateY(-1px)}
+.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
 .examples .lbl{color:var(--faint);font:600 10px var(--mono);text-transform:uppercase;letter-spacing:.14em;margin-right:2px}
 .ex{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 13px;font:600 12px var(--mono);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
 .ex:hover{border-color:var(--accent);color:var(--accent2);background:var(--accent-dim)}
 .kicker{font:600 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
-.hero h1{font-size:46px;margin:0 0 14px}
-.hero .sub{margin-bottom:22px}
-.hero .search{max-width:560px}
 .ftitle{display:flex;align-items:center;gap:9px;font:600 11px var(--sans);text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 16px}
 .ftitle::before{content:"";width:16px;height:1.5px;background:var(--accent);opacity:.7}
 .featured{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px}
@@ -204,21 +202,18 @@ ul.list b{color:var(--ink);font-weight:600}
 .fc-stats .up{color:var(--up)}.fc-stats .down{color:var(--down)}
 .back{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--mono);letter-spacing:.02em;color:var(--muted);text-decoration:none;border:0;cursor:pointer;margin:0 0 22px}
 .back:hover{color:var(--accent2)}
-@media(max-width:560px){.wrap{padding:32px 16px 64px}h1,.hero h1{font-size:27px}h2.name{font-size:25px}.card{padding:16px}.featured{grid-template-columns:1fr}}
+@media(max-width:560px){.wrap{padding:16px 14px 64px}h1{font-size:27px}h2.name{font-size:25px}.card{padding:16px}.featured{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <section id="home">
-<div class="hero">
-<div class="card">
-<h3>종목 깊이 보기</h3>
-<p class="sub" style="margin:-6px 0 16px">공식 공시 기반 — SEC EDGAR(US) · Open DART(KR). 위 시장 브리핑에서 한 종목을 더 파볼 때. 투자자문이 아닙니다.</p>
-<form class="search" id="search"><input id="q" type="text" placeholder="미국·한국 종목 검색 — 예: TSLA, MU, 005930, 카카오" autocomplete="off" spellcheck="false"><button type="submit">검색</button></form>
+<div class="cmdbar">
+<form class="search" id="search"><input id="q" type="text" placeholder="종목 딥다이브 검색 — TSLA, MU, 005930, 카카오 · 공식 공시 기반(EDGAR·DART)" autocomplete="off" spellcheck="false"><button type="submit">검색</button></form>
 <div class="searchmsg" id="searchmsg"></div>
 <div class="examples" id="examples"></div>
 </div>
-</div>
+<!--BRIEF-SLOT-->
 </section>
 <section id="result" hidden>
 <a class="back" id="back" href="#">&larr; Search</a>
@@ -539,7 +534,7 @@ function showHome(){_result.hidden=true;_home.hidden=false;document.title='Pivox
 function showResultView(){_home.hidden=true;_result.hidden=false;window.scrollTo(0,0);}
 function packByTicker(tk){tk=String(tk||'').toUpperCase();return DATA.find(p=>String(p.ticker).toUpperCase()===tk);}
 // --- search: fetch any US ticker live from the serverless backend ---
-const SEARCH_API=/^(localhost|127\\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'');
+const SEARCH_API=/^(localhost|127\\.)/.test(location.hostname)?'http://localhost:8800':(window.PIVOX_API_BASE||'https://pivox-brief.vercel.app');
 async function liveSearch(t){
   const box=document.getElementById('pack');
   box.innerHTML='<p class="meta">Searching '+esc(t)+'\\u2026</p>';

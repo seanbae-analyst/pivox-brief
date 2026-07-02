@@ -78,7 +78,7 @@ def _hot(data, rows: list[tuple]) -> list[dict]:
             continue
         c5 = _sane(round(100 * (last / float(s.iloc[-6]) - 1), 1), _MAX_5D) if len(s) >= 6 else None
         spark = [round(float(v), 4) for v in s.tail(12).tolist()]  # recent closes → sparkline
-        items.append({"label": label, "chg1_pct": c1, "chg5_pct": c5,
+        items.append({"label": label, "symbol": sym, "chg1_pct": c1, "chg5_pct": c5,
                       "spark": spark, "as_of": str(s.index[-1].date())})
     items.sort(key=lambda i: abs(i["chg1_pct"]), reverse=True)
     return items[:_HOT_N]
