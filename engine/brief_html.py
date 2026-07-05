@@ -17,7 +17,9 @@ _ACCENT = "#B8956A"
 
 
 def _esc(s) -> str:
-    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Escapes quotes too, in case a label reaches an HTML attribute context.
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace('"', "&quot;").replace("'", "&#39;"))
 
 
 def _col(x) -> str:

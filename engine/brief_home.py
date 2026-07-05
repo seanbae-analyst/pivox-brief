@@ -19,7 +19,10 @@ _MOOD_COL = {1: "#7AA0C8", 2: "#86a8a0", 3: "#B8956A", 4: "#cf9050", 5: "#cf6b6b
 
 
 def _esc(s) -> str:
-    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # Escapes quotes too — labels are interpolated inside style="..." attributes,
+    # so an unescaped " would break out of the attribute and inject markup.
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace('"', "&quot;").replace("'", "&#39;"))
 
 
 def _col(x):

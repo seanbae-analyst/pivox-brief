@@ -9,11 +9,19 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import requests
 
 from engine.themes import THEMES
+
+# Custom tickers become display labels verbatim on the public homepage, and the
+# picker table is world-writable via the anon key — so an unrestricted string
+# here is a stored-XSS vector. Constrain to the same ticker charset the search
+# API enforces (letters/digits/dot/hyphen), which cannot break out of an HTML
+# attribute or inject markup.
+_TICKER_RE = re.compile(r"^[A-Za-z0-9.\-]{1,12}$")
 
 _PATH = Path(__file__).resolve().parent.parent / "data" / "watchlist.json"
 _TABLE = "brief_settings"
@@ -30,7 +38,7 @@ DEFAULT = {
 
 def _validate(d: dict) -> dict:
     themes = [t for t in d.get("themes", []) if t in THEMES] or DEFAULT["themes"]
-    custom = [s for s in d.get("custom", []) if isinstance(s, str) and s.strip()]
+    custom = [s.strip() for s in d.get("custom", []) if isinstance(s, str) and _TICKER_RE.match(s.strip())]
     level = d.get("explain_level") if d.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
     return {"themes": themes, "custom": custom, "explain_level": level}
 
@@ -72,7 +80,7 @@ def load() -> dict:
 
 def save(wl: dict) -> None:
     themes = [t for t in wl.get("themes", []) if t in THEMES]
-    custom = [s.strip() for s in wl.get("custom", []) if isinstance(s, str) and s.strip()]
+    custom = [s.strip() for s in wl.get("custom", []) if isinstance(s, str) and _TICKER_RE.match(s.strip())]
     level = wl.get("explain_level") if wl.get("explain_level") in _LEVELS else DEFAULT["explain_level"]
     _PATH.parent.mkdir(parents=True, exist_ok=True)
     _PATH.write_text(
